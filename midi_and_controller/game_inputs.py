@@ -16,5 +16,11 @@ def get_active_controller():
         #if no event
         return -1
 
+def get_controller_inputs(controllerID):
+    return[game.joystick.Joystick(controllerID).get_numaxes(), game.joystick.Joystick(controllerID).get_numbuttons()]
+
 def get_controllers():
     return game.joystick
+
+#kinda funny
+#get_power_level

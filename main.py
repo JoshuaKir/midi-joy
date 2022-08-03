@@ -34,13 +34,31 @@ class AnotherWindow(QWidget):
     This "window" is a QWidget. If it has no parent, it
     will appear as a free-floating window as we want.
     """
-    def __init__(self, controllerName):
+    def __init__(self, controllerName, controllerID, controllerGUID):
         self.controller = controllerName
         super().__init__()
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
         self.label = QLabel(self.controller)
-        layout.addWidget(self.label)
-        self.setLayout(layout)
+        self.controllerAxes = []
+        self.controllerButtons = []
+        colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
+        axes,buttons = game.get_controller_inputs(controllerID)
+        for i in range(0, axes):
+            self.controllerAxes.append(mjs.AnimatedButton("Axis: " + str(i+1)))
+            self.controllerAxes[i].setAnimationColor(colorArray[i%len(colorArray)])
+            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
+            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
+            self.layout.addWidget(self.controllerAxes[i])
+
+        for i in range(0, buttons):
+            self.controllerButtons.append(mjs.AnimatedButton("Button: " + str(i+1)))
+            self.controllerButtons[i].setAnimationColor(colorArray[i%len(colorArray)])
+            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
+            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
+            self.layout.addWidget(self.controllerButtons[i])
+
+        self.layout.addWidget(self.label)
+        self.setLayout(self.layout)
 
 
 # Subclass QMainWindow to customize your application's main window
@@ -52,6 +70,7 @@ class MainWindow(QMainWindow):
         ports = mido.get_output_names()
         print(ports)
         self.port = mido.open_output(ports[3])
+        self.controllerWindows = []
 
         self.layout = QVBoxLayout()
         
@@ -60,9 +79,12 @@ class MainWindow(QMainWindow):
         self.activeController = -1
         colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
         for i in range(0, game.get_controllers().get_count()):
-            self.controllerButtons.append(mjs.AnimatedButton(self.joysticks[i].get_name()))
+            controllerName = self.joysticks[i].get_name()
+            controllerGUID = self.joysticks[i].get_guid()
+            self.controllerButtons.append(mjs.AnimatedButton(controllerName))
             self.controllerButtons[i].setAnimationColor(colorArray[i%len(colorArray)])
-            self.controllerButtons[i].clicked.connect(self.controllerClicked)
+            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
+            self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
             self.layout.addWidget(self.controllerButtons[i])
         self.container = QWidget()
         self.container.setLayout(self.layout)
@@ -77,8 +99,11 @@ class MainWindow(QMainWindow):
         self.thread.started.connect(self.pyGame_thread.pyGame)
         self.thread.start()
 
-    def controllerClicked(self, controllerName):
-        print(controllerName)
+    def controllerClicked(self, controllerName, controllerID, controllerGUID):
+        print(controllerName, controllerID, controllerGUID)
+        self.controllerWindows.append(AnotherWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
+        self.controllerWindows[len(self.controllerWindows)-1].show()
+        print(len(self.controllerWindows))
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
