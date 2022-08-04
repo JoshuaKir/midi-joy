@@ -6,6 +6,7 @@ def get_active_controller():
     # This is a qthread so it can run in background
     # guided by https://realpython.com/python-pyqt-qthread/
     for event in game.event.get():
+        #print(event)
         if( event.type == game.JOYBUTTONDOWN or event.type == game.JOYBALLMOTION or event.type == game.JOYHATMOTION):
             return event.joy
     
@@ -17,6 +18,7 @@ def get_active_controller():
         return -1
 
 def get_controller_inputs(controllerID):
+    print(game.joystick.Joystick(controllerID).get_numballs())
     return[game.joystick.Joystick(controllerID).get_numaxes(), game.joystick.Joystick(controllerID).get_numbuttons()]
 
 def get_controllers():

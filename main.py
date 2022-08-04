@@ -1,6 +1,6 @@
 import mido
 import threading
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QGraphicsColorizeEffect
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsColorizeEffect, QSizePolicy
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 from ui_elements import midi_joy_style as mjs
@@ -37,27 +37,43 @@ class AnotherWindow(QWidget):
     def __init__(self, controllerName, controllerID, controllerGUID):
         self.controller = controllerName
         super().__init__()
+        #self.layout = QGridLayout()
         self.layout = QVBoxLayout()
-        self.label = QLabel(self.controller)
+        self.setWindowTitle("Midi Joy: "+ self.controller)
         self.controllerAxes = []
         self.controllerButtons = []
         colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
         axes,buttons = game.get_controller_inputs(controllerID)
-        for i in range(0, axes):
-            self.controllerAxes.append(mjs.AnimatedButton("Axis: " + str(i+1)))
-            self.controllerAxes[i].setAnimationColor(colorArray[i%len(colorArray)])
-            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
-            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
-            self.layout.addWidget(self.controllerAxes[i])
-
+        print(axes,buttons)
+        self.buttons = QGridLayout()
         for i in range(0, buttons):
             self.controllerButtons.append(mjs.AnimatedButton("Button: " + str(i+1)))
             self.controllerButtons[i].setAnimationColor(colorArray[i%len(colorArray)])
+            self.controllerButtons[i].setSizePolicy(
+                QSizePolicy.Preferred,
+                QSizePolicy.Preferred)
             #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
             #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
-            self.layout.addWidget(self.controllerButtons[i])
+            rowCount = i//4
+            self.buttons.addWidget(self.controllerButtons[i], rowCount, i-rowCount*4)
 
-        self.layout.addWidget(self.label)
+        self.axes = QGridLayout()
+        for i in range(0, axes):
+            self.controllerAxes.append(mjs.AnimatedButton("Axis: " + str(i+1)))
+            self.controllerAxes[i].setAnimationColor(colorArray[i%len(colorArray)])
+            self.controllerAxes[i].setSizePolicy(
+                QSizePolicy.Preferred,
+                QSizePolicy.Preferred)
+            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
+            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
+            rowCount = i%2
+            self.axes.addWidget(self.controllerAxes[i], i-rowCount, rowCount)
+
+        #Add hats and buttons
+        self.layout.addLayout(self.buttons)
+        self.layout.addLayout(self.axes)
+        screenSize = QApplication.primaryScreen().size()
+        self.setMinimumSize(screenSize.width()/1.75, screenSize.height()/1.75)
         self.setLayout(self.layout)
 
 
@@ -83,6 +99,9 @@ class MainWindow(QMainWindow):
             controllerGUID = self.joysticks[i].get_guid()
             self.controllerButtons.append(mjs.AnimatedButton(controllerName))
             self.controllerButtons[i].setAnimationColor(colorArray[i%len(colorArray)])
+            self.controllerButtons[i].setSizePolicy(
+                QSizePolicy.Preferred,
+                QSizePolicy.Preferred)
             #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
             self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
             self.layout.addWidget(self.controllerButtons[i])
@@ -90,6 +109,8 @@ class MainWindow(QMainWindow):
         self.container.setLayout(self.layout)
 
         # Set the central widget of the Window.
+        screenSize = QApplication.primaryScreen().size()
+        self.setMinimumSize(screenSize.width()/3, screenSize.height()/3)
         self.setCentralWidget(self.container)
 
         self.thread = QThread()
@@ -103,7 +124,7 @@ class MainWindow(QMainWindow):
         print(controllerName, controllerID, controllerGUID)
         self.controllerWindows.append(AnotherWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
         self.controllerWindows[len(self.controllerWindows)-1].show()
-        print(len(self.controllerWindows))
+        #print(len(self.controllerWindows))
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
