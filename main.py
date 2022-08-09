@@ -29,53 +29,6 @@ class pyGame_qthread(QObject):
                 self.port.send(msg)
             '''
 
-class AnotherWindow(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
-    def __init__(self, controllerName, controllerID, controllerGUID):
-        self.controller = controllerName
-        super().__init__()
-        #self.layout = QGridLayout()
-        self.layout = QVBoxLayout()
-        self.setWindowTitle("Midi Joy: "+ self.controller)
-        self.controllerAxes = []
-        self.controllerButtons = []
-        colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
-        axes,buttons = game.get_controller_inputs(controllerID)
-        print(axes,buttons)
-        self.buttons = QGridLayout()
-        for i in range(0, buttons):
-            self.controllerButtons.append(mjs.AnimatedButton("Button: " + str(i+1)))
-            self.controllerButtons[i].setAnimationColor(colorArray[i%len(colorArray)])
-            self.controllerButtons[i].setSizePolicy(
-                QSizePolicy.Preferred,
-                QSizePolicy.Preferred)
-            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
-            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
-            rowCount = i//4
-            self.buttons.addWidget(self.controllerButtons[i], rowCount, i-rowCount*4)
-
-        self.axes = QGridLayout()
-        for i in range(0, axes):
-            self.controllerAxes.append(mjs.AnimatedButton("Axis: " + str(i+1)))
-            self.controllerAxes[i].setAnimationColor(colorArray[i%len(colorArray)])
-            self.controllerAxes[i].setSizePolicy(
-                QSizePolicy.Preferred,
-                QSizePolicy.Preferred)
-            #https://stackoverflow.com/questions/40705063/pyqt-pushbutton-connect-creation-within-loop
-            #self.controllerButtons[i].clicked.connect(lambda checked, name=controllerName, id=i, guid=controllerGUID: self.controllerClicked(name, id, guid))
-            rowCount = i%2
-            self.axes.addWidget(self.controllerAxes[i], i-rowCount, rowCount)
-
-        #Add hats and buttons
-        self.layout.addLayout(self.buttons)
-        self.layout.addLayout(self.axes)
-        screenSize = QApplication.primaryScreen().size()
-        self.setMinimumSize(screenSize.width()/1.75, screenSize.height()/1.75)
-        self.setLayout(self.layout)
-
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
@@ -85,7 +38,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Midi Joy")
         ports = mido.get_output_names()
         print(ports)
-        self.port = mido.open_output(ports[3])
+        self.port = mido.open_output(ports[0])
         self.controllerWindows = []
 
         self.layout = QVBoxLayout()
@@ -122,7 +75,7 @@ class MainWindow(QMainWindow):
 
     def controllerClicked(self, controllerName, controllerID, controllerGUID):
         print(controllerName, controllerID, controllerGUID)
-        self.controllerWindows.append(AnotherWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
+        self.controllerWindows.append(mjs.controllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
         self.controllerWindows[len(self.controllerWindows)-1].show()
         #print(len(self.controllerWindows))
 
@@ -131,8 +84,6 @@ class MainWindow(QMainWindow):
 
         self.controllerButtons[button].fullAnimatedClick.start()
         #self.controllerButtons[button].secondAnimation.start()
-
-        
 
 app = QApplication([])
 
