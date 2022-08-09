@@ -5,16 +5,15 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 from ui_elements import midi_joy_style as mjs
 from midi_and_controller import game_inputs as game
+import ControllerWindow as cw
 
 
 class pyGame_qthread(QObject):
     controllerSignal = pyqtSignal(int)
 
-    def __init__(self, controllerButtons, joysticks, port):
+    def __init__(self, joysticks):
 
-        self.controllerButtons = controllerButtons
-        self.joysticks = joysticks
-        self.port = port
+        self.joysticks = joysticks #not needed
         super(pyGame_qthread, self).__init__()
 
     def pyGame(self):
@@ -22,12 +21,7 @@ class pyGame_qthread(QObject):
             controller = game.get_active_controller()
             if (controller and controller > -1):
                 self.controllerSignal.emit(controller)
-                print(self.joysticks[controller].get_id())
-            '''
-            if (event.type == game.JOYBUTTONDOWN):
-                msg = mido.Message('note_on', note=60)
-                self.port.send(msg)
-            '''
+                #print(self.joysticks[controller].get_id())
 
 
 # Subclass QMainWindow to customize your application's main window
@@ -67,7 +61,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.container)
 
         self.thread = QThread()
-        self.pyGame_thread = pyGame_qthread(self.controllerButtons, self.joysticks, self.port)
+        self.pyGame_thread = pyGame_qthread(self.joysticks)
         self.pyGame_thread.moveToThread(self.thread)
         self.pyGame_thread.controllerSignal.connect(self.animateButton)
         self.thread.started.connect(self.pyGame_thread.pyGame)
@@ -75,15 +69,13 @@ class MainWindow(QMainWindow):
 
     def controllerClicked(self, controllerName, controllerID, controllerGUID):
         print(controllerName, controllerID, controllerGUID)
-        self.controllerWindows.append(mjs.controllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
+        self.controllerWindows.append(cw.controllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
         self.controllerWindows[len(self.controllerWindows)-1].show()
-        #print(len(self.controllerWindows))
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
 
         self.controllerButtons[button].fullAnimatedClick.start()
-        #self.controllerButtons[button].secondAnimation.start()
 
 app = QApplication([])
 
