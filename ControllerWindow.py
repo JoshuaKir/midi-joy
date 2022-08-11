@@ -28,17 +28,16 @@ class pyGame_qthread(QObject):
         while(1):
             global start
             start = time.time()
-            currentButtonIDs = game.get_active_buttons(self.controllerID)
-            newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
-            for button in newButtons:
+            button, state = game.get_active_button(self.controllerID)
+            #newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
+            if (button > -1 and state):
+                controllerButtonPressed(button)
                 self.buttonPressedSignal.emit(button)
 
-            releasedButtons = set(lastFrameButtonIDs).difference(currentButtonIDs)
-            for button in releasedButtons:
-                self.buttonReleasedSignal.emit(button)
-            
-            lastFrameButtonIDs = currentButtonIDs
-            time.sleep(.15)
+            if (button > -1 and not state):
+                controllerButtonReleased(button)
+                #self.buttonReleasedSignal.emit(button)
+            #time.sleep(.05)
 
 class controllerWindow(QWidget):
 
@@ -90,8 +89,6 @@ class controllerWindow(QWidget):
         self.thread = QThread()
         self.pyGame_thread = pyGame_qthread(controllerID)
         self.pyGame_thread.moveToThread(self.thread)
-        self.pyGame_thread.buttonPressedSignal.connect(self.controllerButtonPressed)
-        self.pyGame_thread.buttonReleasedSignal.connect(self.controllerButtonReleased)
         self.pyGame_thread.buttonPressedSignal.connect(self.animateButton)
         self.thread.started.connect(self.pyGame_thread.pyGame)
         self.thread.start()
@@ -99,18 +96,6 @@ class controllerWindow(QWidget):
     def buttonClicked(self, buttonID):
         self.actionWindows.append(ButtonWindow(buttonID=buttonID))
 
-    def controllerButtonPressed(self, buttonID):
-        #if (globalButtonActionList[buttonID] != []):
-        for action in globalButtonActionList[buttonID]:
-            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
-        end = time.time()
-        print(end - start)
-
-    def controllerButtonReleased(self, buttonID):
-        #if (globalButtonActionList[buttonID] != []):
-        for action in globalButtonActionList[buttonID]:
-            #print(mm.send_midi_message(action.midiPortName, action.midiAction.midoMessageOff))
-            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
@@ -134,11 +119,11 @@ class ButtonWindow(QWidget):
                 midiPort = QComboBox()
                 midiPortList = mm.get_output_list()
                 midiPort.addItems(midiPortList)
-                midiPort.setCurrentIndex(globalButtonActionList[buttonID][i].midiPortIndex)
+                midiPort.setCurrentIndex(midiPortList.index(globalButtonActionList[buttonID][i].midiPortName))
                 mm.open_port_with_name(globalButtonActionList[buttonID][i].midiPortName)
                 midiPort.currentIndexChanged.connect(lambda port, buttonID=buttonID, actionID=i, newAction=midiPort: 
                     globalButtonActionList[buttonID][actionID].set_midiPort(newAction))
-                midiPort.currentIndexChanged.connect(lambda port, newAction=midiPort: 
+                midiPort.currentIndexChanged.connect(lambda port, actionID=i, newAction=midiPort: 
                     globalButtonActionList[buttonID][actionID].set_midiPortOpenPortsIndex(mm.open_port_with_widget(newAction)))
                 ###
                 actionType = QComboBox()
@@ -175,3 +160,16 @@ class ButtonWindow(QWidget):
 
 def get_output_list():
     return mido.get_output_names()
+
+def controllerButtonPressed(buttonID):
+        #if (globalButtonActionList[buttonID] != []):
+        for action in globalButtonActionList[buttonID]:
+            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+        end = time.time()
+        print(end - start)
+
+def controllerButtonReleased(buttonID):
+        #if (globalButtonActionList[buttonID] != []):
+        for action in globalButtonActionList[buttonID]:
+            #print(mm.send_midi_message(action.midiPortName, action.midiAction.midoMessageOff))
+            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)

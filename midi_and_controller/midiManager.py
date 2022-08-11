@@ -31,7 +31,7 @@ class midiManager():
 		if (portIndex > -1): #port exists
 			if (self.openOutputPorts[portIndex].closed):
 				mido.open_output(portName)
-				return portIndex
+			return portIndex
 		else:
 			self.openOutputPorts.append(mido.open_output(portName))
 			return len(self.openOutputPorts)-1
@@ -47,7 +47,7 @@ class midiManager():
 		if (portIndex > -1): #port exists
 			if (self.openOutputPorts[portIndex].closed):
 				mido.open_output(portName)
-				return portIndex
+			return portIndex
 		else:
 			self.openOutputPorts.append(mido.open_output(portName))
 			return len(self.openOutputPorts)-1
