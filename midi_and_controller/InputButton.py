@@ -1,22 +1,33 @@
-import mido
+from .midiManager import midiNote, midiControlChange, midiManager
 
 class ButtonAction():
-	def __init__(self, inputIndex=99, midiAction=mido.Message('note_on', note=100, velocity=100), midiPort=0, actionType=0, previousState=False, isMuted=False):
+	def __init__(self, inputIndex=99, midiPort=2, actionType=0, previousState=False, midiParameterValue=100, isMuted=False):
 
 		self.inputIndex = inputIndex
-		self.midiAction = midiAction #velocity is 0-127
-		self.midiPort = midiPort
+		self.midiPortIndex = midiPort
+		self.midiPortName = midiManager.get_output_list(self)[len(midiManager.get_output_list(self))-1]
+		self.midiPortOpenPortsIndex = None
 		self.actionType = actionType
 		self.previousState = previousState
+		self.midiParameterValue = midiParameterValue
 		self.isMuted = isMuted		
-		print(self.midiPort)
-		#self.port = mido.open_output(self.midiPort)
+		#print("test "+ str(self.midiPort))
+		#self.midiPort = mido.open_output(get_output_list()[self.midiPortIndex])
+		if (actionType == 0):
+			self.midiAction = midiNote()
+		elif (nactionType == 1):
+			self.midiAction = midiControlChange()
 
-	def send_message(self):
+	def send_on_message(self):
+		if (not self.isMuted):
+			msg = self.midiAction.get_on_message()
+			self.midiPort.send(msg)
+
+	def send_off_message(self):
 		if (not isMuted):
-			msg = mido.Message(self.midiAction)
-			self.port.send(msg)
-
+			msg = self.midiAction.get_off_message()
+			self.midiPort.send(msg)
+	
 	def set_mute(self, newState):
 		self.isMuted = newState
 
@@ -26,26 +37,26 @@ class ButtonAction():
 		#might be unreliable
 		self.actionType = newState.currentIndex()
 		if (newState.currentIndex() == 0):
-			self.midiAction = mido.Message('note_on', note=100, velocity=100)
-		
+			self.midiAction = midiNote()
 		elif (newState.currentIndex() == 1):
-			self.midiAction = mido.Message('pitchwheel', pitch=0)
-
-		elif (newState.currentIndex() == 2):
-			self.midiAction = mido.Message('control_change', control=1, value=100)
-		print(newState)
+			self.midiAction = midiControlChange()
 
 	def set_midiPort(self, newState):
 		#see set_midiAction
 		self.midiPort = newState.currentIndex()
+		self.midiPortName = midiManager.get_output_list(self)[midiPort]
+
+	def set_midiPortOpenPortsIndex(self, newState):
+		#see set_midiAction
+		self.midiPortOpenPortsIndex = newState
 
 	def set_previousState(self, newState):
 		self.previousState = newState
 
-#helper functions
-def get_output_list():
-	return mido.get_output_names()
+	def set_midiParameterValue(self, newState):
+		self.midiParameterValue = newState
+
 
 def get_actionType_list():
-	return ['Midi Note', 'Midi Effect', 'Control Change']
+	return ['Midi Note', 'Control Change']
 

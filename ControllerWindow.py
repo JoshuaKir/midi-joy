@@ -3,14 +3,20 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 from midi_and_controller import game_inputs as game
 from midi_and_controller import InputButton as inputs
+from midi_and_controller import midiManager
 from ui_elements import midi_joy_style as mjs
 import mido
+import time
 
 globalButtonActionList = []
 globalAxisActionList = []
-
+openMidiPorts = []
+mm = midiManager.midiManager()
+start = time.time()
+end = time.time()
 class pyGame_qthread(QObject):
-    controllerSignal = pyqtSignal(int)
+    buttonPressedSignal = pyqtSignal(int)
+    buttonReleasedSignal = pyqtSignal(int)
 
     def __init__(self, controllerID):
 
@@ -20,14 +26,19 @@ class pyGame_qthread(QObject):
     def pyGame(self):
         lastFrameButtonIDs = []
         while(1):
+            global start
+            start = time.time()
             currentButtonIDs = game.get_active_buttons(self.controllerID)
-            for button in currentButtonIDs:
-                if (button not in lastFrameButtonIDs):
-                    #add midi call (maybe to different func but same idea)
-                    self.controllerSignal.emit(button)
-                elif (button not in currentButtonIDs and button in lastFrameButtonIDs):
-                    pass #midi note off
+            newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
+            for button in newButtons:
+                self.buttonPressedSignal.emit(button)
+
+            releasedButtons = set(lastFrameButtonIDs).difference(currentButtonIDs)
+            for button in releasedButtons:
+                self.buttonReleasedSignal.emit(button)
+            
             lastFrameButtonIDs = currentButtonIDs
+            time.sleep(.15)
 
 class controllerWindow(QWidget):
 
@@ -41,7 +52,7 @@ class controllerWindow(QWidget):
         self.controllerAxes = []
         self.controllerButtons = []
         self.midiActions = []
-        colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
+        colorArray = mjs.colorArray
         axes,buttons = game.get_controller_inputs(controllerID)
         self.buttons = QGridLayout()
         for i in range(0, buttons):
@@ -79,12 +90,27 @@ class controllerWindow(QWidget):
         self.thread = QThread()
         self.pyGame_thread = pyGame_qthread(controllerID)
         self.pyGame_thread.moveToThread(self.thread)
-        self.pyGame_thread.controllerSignal.connect(self.animateButton)
+        self.pyGame_thread.buttonPressedSignal.connect(self.controllerButtonPressed)
+        self.pyGame_thread.buttonReleasedSignal.connect(self.controllerButtonReleased)
+        self.pyGame_thread.buttonPressedSignal.connect(self.animateButton)
         self.thread.started.connect(self.pyGame_thread.pyGame)
         self.thread.start()
 
     def buttonClicked(self, buttonID):
         self.actionWindows.append(ButtonWindow(buttonID=buttonID))
+
+    def controllerButtonPressed(self, buttonID):
+        #if (globalButtonActionList[buttonID] != []):
+        for action in globalButtonActionList[buttonID]:
+            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+        end = time.time()
+        print(end - start)
+
+    def controllerButtonReleased(self, buttonID):
+        #if (globalButtonActionList[buttonID] != []):
+        for action in globalButtonActionList[buttonID]:
+            #print(mm.send_midi_message(action.midiPortName, action.midiAction.midoMessageOff))
+            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
@@ -106,12 +132,14 @@ class ButtonWindow(QWidget):
                 mute.setToolTip("Mute")
                 ###
                 midiPort = QComboBox()
-                midiPortList = inputs.get_output_list()
+                midiPortList = mm.get_output_list()
                 midiPort.addItems(midiPortList)
-                midiPort.setCurrentIndex(globalButtonActionList[buttonID][i].midiPort)
-                midiPort.setToolTip("Midi Port")
+                midiPort.setCurrentIndex(globalButtonActionList[buttonID][i].midiPortIndex)
+                mm.open_port_with_name(globalButtonActionList[buttonID][i].midiPortName)
                 midiPort.currentIndexChanged.connect(lambda port, buttonID=buttonID, actionID=i, newAction=midiPort: 
                     globalButtonActionList[buttonID][actionID].set_midiPort(newAction))
+                midiPort.currentIndexChanged.connect(lambda port, newAction=midiPort: 
+                    globalButtonActionList[buttonID][actionID].set_midiPortOpenPortsIndex(mm.open_port_with_widget(newAction)))
                 ###
                 actionType = QComboBox()
                 actionTypeList = inputs.get_actionType_list()
@@ -138,8 +166,12 @@ class ButtonWindow(QWidget):
 
     def addAction(self, buttonID):
         globalButtonActionList[buttonID].append(inputs.ButtonAction(inputIndex=buttonID))
+        globalButtonActionList[buttonID][len(globalButtonActionList[buttonID])-1].set_midiPortOpenPortsIndex(mm.open_port_with_name(globalButtonActionList[buttonID][len(globalButtonActionList[buttonID])-1].midiPortName))
         self.hide()
         self.__init__(buttonID)
 
     def changeMute(self, buttonID, actionID, newState):
         pass
+
+def get_output_list():
+    return mido.get_output_names()

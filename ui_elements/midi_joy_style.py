@@ -7,6 +7,7 @@ import mido
 
 globalButtonActionList = []
 globalAxisActionList = []
+colorArray = ['#ab76e0', '#f570a5', '#1cc468', '#3cd7f6', '#f7b67d']
 class AnimatedButton(QPushButton):
 
     # from https://stackoverflow.com/questions/52270391/i-want-to-create-a-color-animation-for-a-button-with-pyqt5

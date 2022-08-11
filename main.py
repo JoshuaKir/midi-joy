@@ -2,12 +2,15 @@ import mido
 import threading
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsColorizeEffect, QSizePolicy
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup, QFile, QTextStream
+import qdarkstyle
 from ui_elements import midi_joy_style as mjs
 from midi_and_controller import game_inputs as game
 import ControllerWindow as cw
+import time
 
-
+start = time.time()
+end = time.time()
 class pyGame_qthread(QObject):
     controllerSignal = pyqtSignal(int)
 
@@ -20,6 +23,8 @@ class pyGame_qthread(QObject):
         while(1):
             controller = game.get_active_controller()
             if (controller and controller > -1):
+                global start
+                start = time.time()
                 self.controllerSignal.emit(controller)
                 #print(self.joysticks[controller].get_id())
 
@@ -40,7 +45,7 @@ class MainWindow(QMainWindow):
         self.joysticks = [game.get_controllers().Joystick(x) for x in range(game.get_controllers().get_count())]
         self.controllerButtons = []
         self.activeController = -1
-        colorArray = ['#bb14e0', '#ff0000', '#005100', '#0011fb']
+        colorArray = mjs.colorArray
         for i in range(0, game.get_controllers().get_count()):
             controllerName = self.joysticks[i].get_name()
             controllerGUID = self.joysticks[i].get_guid()
@@ -73,12 +78,14 @@ class MainWindow(QMainWindow):
         self.controllerWindows[len(self.controllerWindows)-1].show()
 
     def animateButton(self, button):
+        end = time.time()
+        #print(end - start)
         self.controllerButtons[button].fullAnimatedClick.stop()
 
         self.controllerButtons[button].fullAnimatedClick.start()
 
 app = QApplication([])
-
+app.setStyleSheet(qdarkstyle.load_stylesheet()) #https://github.com/ColinDuquesnoy/QDarkStyleSheet
 window = MainWindow()
 window.show()
 
