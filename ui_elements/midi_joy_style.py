@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsColorizeEffect, QSizePolicy, QComboBox, QCheckBox
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsColorizeEffect, QSizePolicy, QComboBox, QCheckBox
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 from midi_and_controller import game_inputs as game
 from midi_and_controller import InputButton as inputs
 import mido
@@ -33,3 +33,14 @@ class AnimatedButton(QPushButton):
         self.fullAnimatedClick = QSequentialAnimationGroup()
         self.fullAnimatedClick.addAnimation(self.firstAnimation)
         self.fullAnimatedClick.addAnimation(self.secondAnimation)
+
+class FixedComboBox(QComboBox):
+    def __init__(self, *args, **kwargs):
+        self.index = 36
+        super(FixedComboBox, self).__init__(*args, **kwargs)
+
+    def setCurrentIndex(self, index):
+        self.blockSignals(True)
+        self.index = index
+        QComboBox.setCurrentIndex(self, index)
+        self.blockSignals(False)

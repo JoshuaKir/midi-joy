@@ -18,36 +18,22 @@ class ButtonAction():
 		elif (actionType == 1):
 			self.midiAction = midiControlChange()
 
-	def send_on_message(self):
-		if (not self.isMuted):
-			msg = self.midiAction.get_on_message()
-			self.midiPort.send(msg)
-
-	def send_off_message(self):
-		if (not self.isMuted):
-			msg = self.midiAction.get_off_message()
-			self.midiPort.send(msg)
+	def get_midiAction(self):
+		return self.midiAction
 	
 	def set_mute(self, newState):
 		self.isMuted = newState
 
 	def set_midiAction(self, newState):
-		#cursed, but had to send the whole pyqt widget
-		#this is because at time of onIndexChanged, the widget does not update
-		#might be unreliable
-		self.actionType = newState.currentIndex()
-		if (newState.currentIndex() == 0):
+		if (newState == 0):
 			self.midiAction = midiNote()
-		elif (newState.currentIndex() == 1):
+		elif (newState == 1):
 			self.midiAction = midiControlChange()
 
 	def set_midiPort(self, newState):
-		#see set_midiAction
-		self.midiPort = newState.currentIndex()
-		self.midiPortName = midiManager.get_output_list(self)[self.midiPort]
+		self.midiPortName = midiManager.get_output_list(self)[newState]
 
 	def set_midiPortOpenPortsIndex(self, newState):
-		#see set_midiAction
 		self.midiPortOpenPortsIndex = newState
 
 	def set_previousState(self, newState):

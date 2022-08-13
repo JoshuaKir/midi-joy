@@ -68,22 +68,34 @@ class midiAction():
 		return self.midoMessageOff
 
 class midiNote(midiAction):
-	def __init__(self, midoMessageOn=mido.Message('note_on', note=60, velocity=100), midoMessageOff=mido.Message('note_off', note=60)):
-		self.midoMessageOn = midoMessageOn
-		self.midoMessageOff = midoMessageOff
+	def __init__(self):
+		#strange python behaviour where using the parameters didn't work so we set them here :)
+		self.midoMessageOn = mido.Message('note_on', note=36, velocity=100)
+		self.midoMessageOff = mido.Message('note_off', note=36)
 
-	def set_note(note):
+	def get_note(self):
+		return self.midoMessageOn.note
+
+	def get_velocity(self):
+		return self.midoMessageOn.velocity
+
+	def set_note(self, note):
 		self.midoMessageOn.note = note
 		self.midoMessageOff.note = note
 
-	def set_velocity(velocity):
+	def set_note_from_string(self, noteStr):
+		note = list(sharpsList.values()).index(noteStr)
+		self.midoMessageOn.note = note
+		self.midoMessageOff.note = note
+
+	def set_velocity(self, velocity):
 		self.midoMessageOn.velocity = velocity
 		self.midoMessageOff.velocity = velocity
 
-	def set_time(time):
+	def set_time(self, time):
 		self.midoMessageOn.time = time
 
-	def set_channel(channel):
+	def set_channel(self, channel):
 		#not used currently
 		self.midoMessageOn.channel = channel
 		self.midoMessageOff.channel = channel
@@ -93,18 +105,34 @@ class midiControlChange(midiAction):
 		self.midoMessageOn = midoMessageOn
 		self.midoMessageOff = midoMessageOff
 
-	def set_control(control):
+	def set_control(self, control):
 		self.midoMessageOn.control = control
 		self.midoMessageOff.control = control
 
-	def set_value(value):
+	def set_value(self, value):
 		self.midoMessageOn.value = value
 		self.midoMessageOff.value = value
 
-	def set_time(time):
+	def set_time(self, time):
 		self.midoMessageOn.time = time
 
-	def set_channel(channel):
+	def set_channel(self, channel):
 		#not used currently
 		self.midoMessageOn.channel = channel
 		self.midoMessageOff.channel = channel
+
+#will automate in future lol
+sharpsList = {}
+for i in range(9): #9octaves
+	sharpsList[0+(12*i)] = ('C ' + str(i+1))
+	sharpsList[1+(12*i)] = ('C#' + str(i+1))
+	sharpsList[2+(12*i)] = ('D ' + str(i+1))
+	sharpsList[3+(12*i)] = ('D#' + str(i+1))
+	sharpsList[4+(12*i)] = ('E ' + str(i+1))
+	sharpsList[5+(12*i)] = ('F ' + str(i+1))
+	sharpsList[6+(12*i)] = ('F#' + str(i+1))
+	sharpsList[7+(12*i)] = ('G ' + str(i+1))
+	sharpsList[8+(12*i)] = ('G#' + str(i+1))
+	sharpsList[9+(12*i)] = ('A ' + str(i+1))
+	sharpsList[10+(12*i)] = ('A#' + str(i+1))
+	sharpsList[11+(12*i)] = ('B ' + str(i+1))
