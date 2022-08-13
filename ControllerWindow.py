@@ -11,6 +11,8 @@ import time
 globalButtonActionList = []
 globalAxisActionList = []
 gameManager = game.GameManager()
+joyDown = gameManager.get_joy_down_type()
+joyUp = gameManager.get_joy_up_type()
 controllerCount = gameManager.get_controllers().get_count()
 for controllerID in range(controllerCount):
     #controller->button->action
@@ -98,21 +100,33 @@ class controllerWindow(QWidget):
         screenSize = QApplication.primaryScreen().size()
         self.setMinimumSize(screenSize.width()/1.75, screenSize.height()/1.75)
         self.setLayout(self.layout)
-
+        '''
         self.thread = QThread()
         self.pyGame_thread = pyGame_qthread(controllerID)
         self.pyGame_thread.moveToThread(self.thread)
         self.pyGame_thread.buttonPressedSignal.connect(self.animateButton)
         self.thread.started.connect(self.pyGame_thread.pyGame)
         self.thread.start()
-
+        '''
     def buttonClicked(self, controllerID, buttonID):
         self.actionWindows.append(ButtonWindow(controllerID=controllerID, buttonID=buttonID))
 
+    def process_game_event(self, event):
+        global start
+        start = time.time()
+        # newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
+        if (event.joy == self.controllerID):
+            if (event.type == joyDown):
+                controllerButtonPressed(self.controllerID, event.button)
+                self.animateButton(event.button)
+
+            elif (event.type == joyUp):
+                controllerButtonReleased(self.controllerID, event.button)
+            # self.buttonReleasedSignal.emit(button)
+        # time.sleep(.05)
 
     def animateButton(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
-
         self.controllerButtons[button].fullAnimatedClick.start()
 
     def closeEvent(self, event):

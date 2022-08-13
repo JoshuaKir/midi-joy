@@ -14,17 +14,18 @@ end = time.time()
 openControllerWindows = 0
 gameManager = game.GameManager()
 
-class pyGame_qthread(QObject):
-    controllerSignal = pyqtSignal(int)
+class pyGameEmitter_qthread(QObject):
+    eventSignal = pyqtSignal(gameManager.get_typing_of_event())
 
     def __init__(self, joysticks):
-        self.threadedGameManager = game.GameManager()
-        super(pyGame_qthread, self).__init__()
+        super(pyGameEmitter_qthread, self).__init__()
 
-    def pyGame(self):
-        activeControllers = []
-        lastFrameActiveControllers = []
+    def pyGameEmitter(self):
         while(1):
+            event = gameManager.get_event()
+            if(event):
+                self.eventSignal.emit(event)
+            '''
             if (openControllerWindows == 0):
                 self.threadedGameManager.run_event_loop()
             activeControllers = self.threadedGameManager.get_active_controllers()
@@ -36,7 +37,24 @@ class pyGame_qthread(QObject):
                 #print(self.joysticks[controller].get_id())
 
             lastFrameActiveControllers = activeControllers
+            '''
+class pyGameMainMenuAnimation_qthread(QObject):
+    controllerSignal = pyqtSignal(int)
 
+    def __init__(self, joysticks):
+        super(pyGameMainMenuAnimation_qthread, self).__init__()
+
+    def pyGameController(self):
+        activeControllers = []
+        lastFrameActiveControllers = []
+        while(1):
+            activeControllers = gameManager.get_active_controllers()
+            newControllers = set(activeControllers).difference(lastFrameActiveControllers)
+            for controller in newControllers:
+                self.controllerSignal.emit(controller)
+
+            lastFrameActiveControllers = activeControllers
+            time.sleep(0.01)
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -70,12 +88,19 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(screenSize.width()/3, screenSize.height()/3)
         self.setCentralWidget(self.container)
 
-        self.thread = QThread()
-        self.pyGame_thread = pyGame_qthread(self.joysticks)
-        self.pyGame_thread.moveToThread(self.thread)
-        self.pyGame_thread.controllerSignal.connect(self.animateButton)
-        self.thread.started.connect(self.pyGame_thread.pyGame)
-        self.thread.start()
+        self.emitterThread = QThread()
+        self.pyGameEmitterThread = pyGameEmitter_qthread(self.joysticks)
+        self.pyGameEmitterThread.moveToThread(self.emitterThread)
+        self.pyGameEmitterThread.eventSignal.connect(self.send_event_to_controller_windows)
+        self.emitterThread.started.connect(self.pyGameEmitterThread.pyGameEmitter)
+        self.emitterThread.start()
+
+        self.controllerThread = QThread()
+        self.pyGameControllerThread = pyGameMainMenuAnimation_qthread(self.joysticks)
+        self.pyGameControllerThread.moveToThread(self.controllerThread)
+        self.pyGameControllerThread.controllerSignal.connect(self.animateButton)
+        self.controllerThread.started.connect(self.pyGameControllerThread.pyGameController)
+        self.controllerThread.start()
 
     def controllerClicked(self, controllerName, controllerID, controllerGUID):
         print(controllerName, controllerID, controllerGUID)
@@ -97,6 +122,10 @@ class MainWindow(QMainWindow):
             openControllerWindows += 1
         else:
             self.controllerWindows[existingWindowIndex].activateWindow()
+
+    def send_event_to_controller_windows(self, event):
+        for window in (self.controllerWindows):
+            window.process_game_event(event)
 
     def animateButton(self, button):
         end = time.time()

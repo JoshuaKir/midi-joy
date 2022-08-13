@@ -53,10 +53,12 @@ class GameManager:
                 #if no event
         return [-1, False]
 
-    def run_event_loop(self):
+    def get_event(self):
         #for running loop when no controllerWindows are opened
         for event in game.event.get():
-            pass
+            return event
+
+        return None
 
     def get_controller_inputs(self, controllerID):
         print(game.joystick.Joystick(controllerID).get_numballs())
@@ -65,5 +67,14 @@ class GameManager:
     def get_controllers(self):
         return game.joystick
 
+    def get_typing_of_event(self):
+        x = game.event.EventType
+        return (x)
+
+    def get_joy_down_type(self):
+        return game.JOYBUTTONDOWN
+
+    def get_joy_up_type(self):
+        return game.JOYBUTTONUP
 #kinda funny
 #get_power_level
