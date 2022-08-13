@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
 
         # Set the central widget of the Window.
         screenSize = QApplication.primaryScreen().size()
-        self.setMinimumSize(screenSize.width()/3, screenSize.height()/3)
+        self.setMinimumSize(screenSize.width()//3, screenSize.height()//3)
         self.setCentralWidget(self.container)
 
         self.emitterThread = QThread()
@@ -124,14 +124,14 @@ class MainWindow(QMainWindow):
             self.controllerWindows[existingWindowIndex].activateWindow()
 
     def send_event_to_controller_windows(self, event):
-        for window in (self.controllerWindows):
-            window.process_game_event(event)
+        for i, window in enumerate(self.controllerWindows):
+            if (not window.isClosed):
+                window.process_game_event(event)
+            else:
+                self.controllerWindows.pop(i)
 
     def animateButton(self, button):
-        end = time.time()
-        #print(end - start)
         self.controllerButtons[button].fullAnimatedClick.stop()
-
         self.controllerButtons[button].fullAnimatedClick.start()
 
     

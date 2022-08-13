@@ -70,8 +70,8 @@ class midiAction():
 class midiNote(midiAction):
 	def __init__(self):
 		#strange python behaviour where using the parameters didn't work so we set them here :)
-		self.midoMessageOn = mido.Message('note_on', note=36, velocity=100)
-		self.midoMessageOff = mido.Message('note_off', note=36)
+		self.midoMessageOn = mido.Message('note_on', note=60, velocity=100)
+		self.midoMessageOff = mido.Message('note_off', note=60)
 
 	def get_note(self):
 		return self.midoMessageOn.note
@@ -111,7 +111,7 @@ class midiControlChange(midiAction):
 
 	def set_value(self, value):
 		self.midoMessageOn.value = value
-		self.midoMessageOff.value = value
+		#self.midoMessageOff.value = value
 
 	def set_time(self, time):
 		self.midoMessageOn.time = time
@@ -122,17 +122,20 @@ class midiControlChange(midiAction):
 		self.midoMessageOff.channel = channel
 
 #will automate in future lol
+octaveShift = -2
 sharpsList = {}
-for i in range(9): #9octaves
-	sharpsList[0+(12*i)] = ('C ' + str(i+1))
-	sharpsList[1+(12*i)] = ('C#' + str(i+1))
-	sharpsList[2+(12*i)] = ('D ' + str(i+1))
-	sharpsList[3+(12*i)] = ('D#' + str(i+1))
-	sharpsList[4+(12*i)] = ('E ' + str(i+1))
-	sharpsList[5+(12*i)] = ('F ' + str(i+1))
-	sharpsList[6+(12*i)] = ('F#' + str(i+1))
-	sharpsList[7+(12*i)] = ('G ' + str(i+1))
-	sharpsList[8+(12*i)] = ('G#' + str(i+1))
-	sharpsList[9+(12*i)] = ('A ' + str(i+1))
-	sharpsList[10+(12*i)] = ('A#' + str(i+1))
-	sharpsList[11+(12*i)] = ('B ' + str(i+1))
+for i in range(0, 11): #9octaves
+	sharpsList[0+(12*i)] = ('C ' + str(i+octaveShift))
+	sharpsList[1+(12*i)] = ('C#' + str(i+octaveShift))
+	sharpsList[2+(12*i)] = ('D ' + str(i+octaveShift))
+	sharpsList[3+(12*i)] = ('D#' + str(i+octaveShift))
+	sharpsList[4+(12*i)] = ('E ' + str(i+octaveShift))
+	sharpsList[5+(12*i)] = ('F ' + str(i+octaveShift))
+	sharpsList[6+(12*i)] = ('F#' + str(i+octaveShift))
+	sharpsList[7+(12*i)] = ('G ' + str(i+octaveShift))
+	sharpsList[8+(12*i)] = ('G#' + str(i+octaveShift))
+	sharpsList[9+(12*i)] = ('A ' + str(i+octaveShift))
+	sharpsList[10+(12*i)] = ('A#' + str(i+octaveShift))
+	sharpsList[11+(12*i)] = ('B ' + str(i+octaveShift))
+
+print('list', sharpsList[36])

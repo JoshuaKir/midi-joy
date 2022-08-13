@@ -25,6 +25,7 @@ class ButtonAction():
 		self.isMuted = newState
 
 	def set_midiAction(self, newState):
+		self.actionType = newState
 		if (newState == 0):
 			self.midiAction = midiNote()
 		elif (newState == 1):

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsColorizeEffect, QSizePolicy, QComboBox, QCheckBox, QSpinBox
+from PyQt6.QtWidgets import QApplication, QVBoxLayout, QGridLayout, QWidget, QSizePolicy, QComboBox, QCheckBox, QSpinBox, QSpacerItem
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 from midi_and_controller import game_inputs as game
@@ -130,9 +130,6 @@ class controllerWindow(QWidget):
         self.controllerButtons[button].fullAnimatedClick.start()
 
     def closeEvent(self, event):
-        self.pyGame_thread.quit()
-        self.thread.quit()
-        self.thread.wait()
         self.isClosed = True
         event.accept()
 
@@ -147,27 +144,48 @@ class ButtonWindow(QWidget):
         global globalButtonActionList
         for i in range(0, len(globalButtonActionList[controllerID][buttonID])):
             globalAction = globalButtonActionList[controllerID][buttonID][i]
+            lastCol = 1
             if(globalAction.inputIndex == buttonID):
                 actionList = QGridLayout()
-                mute = QCheckBox()
-                mute.setText("Mute")
-                mute.setToolTip("Mute")
+                muteBox = QCheckBox()
+                muteBox.setText("Mute")
+                muteBox.setToolTip("Mute")
+                muteBox.stateChanged.connect(lambda mute, controller=controllerID, button=buttonID, actionID=i, muteState=muteBox: 
+                    globalButtonActionList[controllerID][buttonID][actionID].set_mute(muteState.isChecked()))
                 ###
-                noteSpin = QSpinBox()
-                noteSpin.setMinimum(0)
-                noteSpin.setMaximum(127)
+                if (globalAction.actionType == 0):
+                    noteBox = QComboBox()
+                    noteList = list(midiManager.sharpsList.values())
+                    noteBox.setToolTip("Midi Note")
+                    noteBox.addItems(noteList)
+                    noteBox.setCurrentIndex(-1)
+                    noteBox.setCurrentIndex(globalAction.midiAction.get_note())
+                    noteBox.activated.connect(lambda state, controller=controllerID, button=buttonID, actionID=i, note=noteBox:
+                        globalButtonActionList[controllerID][buttonID][actionID].get_midiAction().set_note(note.currentIndex()))
+                    actionList.addWidget(noteBox, i, 1)
+                ###
+                if (globalAction.actionType == 1):
+                    lastCol = 2
+                    controlBox = QSpinBox()
+                    controlBox.setToolTip("Control Type")
+                    controlBox.setMinimum(0)
+                    controlBox.setMaximum(127)
+                    controlBox.setPrefix('Control Change Type: ')
+                    controlBox.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+                    controlBox.valueChanged.connect(lambda state, controller=controllerID, button=buttonID, actionID=i, value=controlBox:
+                        globalButtonActionList[controllerID][buttonID][actionID].get_midiAction().set_control(value.value()))
+                    actionList.addWidget(controlBox, i, 1)
 
-                noteBox = QComboBox()
-                noteList = list(midiManager.sharpsList.values())
-                noteBox.setToolTip("Midi Note")
-                noteBox.addItems(noteList)
-                #noteBox.setCurrentIndex(-1)
-                noteBox.setCurrentIndex(globalAction.midiAction.get_note())
-                noteBox.currentIndexChanged.connect(lambda state, controller=controllerID, button=buttonID, action=i, noteIndex=noteBox:
-                    self.addMidiNoteTest(controller, button, action, noteBox.currentIndex()))
-                    #print(globalAct.get_midiAction(), noteIndex.currentIndex()))
-                    #globalAct.get_midiAction().set_note(noteIndex.currentIndex()))
-
+                    controlValue = QSpinBox()
+                    controlValue.setToolTip("Control Value")
+                    controlValue.setMinimum(0)
+                    controlValue.setMaximum(127)
+                    controlValue.setPrefix('Control Change Value: ')
+                    controlValue.valueChanged.connect(
+                        lambda state, controller=controllerID, button=buttonID, actionID=i, value=controlValue:
+                        globalButtonActionList[controllerID][buttonID][actionID].get_midiAction().set_value(
+                            value.value()))
+                    actionList.addWidget(controlValue, i, lastCol)
                 ###
                 midiPort = QComboBox()
                 midiPortList = mm.get_output_list()
@@ -184,14 +202,16 @@ class ButtonWindow(QWidget):
                 actionType.setToolTip("Midi Message Type")
                 actionType.addItems(actionTypeList)
                 actionType.setCurrentIndex(globalAction.actionType)
-                actionType.currentIndexChanged.connect(lambda action, buttonID=buttonID, actionID=i, newAction=actionType: 
-                    globalAction.set_midiAction(newAction.currentIndex()))
+                actionType.currentIndexChanged.connect(lambda type, action=globalAction, controller=controllerID, button=buttonID, newAction=actionType:
+                    self.controlChange(action, controller, button, newAction))
                 ###
-                actionList.addWidget(mute, i, 0)
-                actionList.addWidget(noteBox, i, 1)
-                actionList.addWidget(midiPort, i+1, 1)
-                actionList.addWidget(actionType, i+1, 0)
+                actionList.addWidget(muteBox, i+1, 0)
+                actionList.addWidget(midiPort, i+1, lastCol)
+                actionList.addWidget(actionType, i, 0)
+                actionSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+                actionList.addItem(actionSpacer, i+2, 0)
                 self.layout.addLayout(actionList)
+
         addActionButtonLayout = QGridLayout()
         addActionButton = mjs.AnimatedButton("Add Midi Action")
         addActionButton.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -213,14 +233,11 @@ class ButtonWindow(QWidget):
         self.hide()
         self.__init__(controllerID, buttonID)
 
-    def addMidiNoteTest(self, controllerID, buttonID, actionID, noteBoxIndex):
-        global globalButtonActionList
-        x = noteBoxIndex
-        print(x)
-        globalButtonActionList[controllerID][buttonID][actionID].get_midiAction().set_note(noteBoxIndex)
+    def controlChange(self, action, controllerID, buttonID, newAction):
+        action.set_midiAction(newAction.currentIndex())
+        self.hide()
+        self.__init__(controllerID, buttonID)
 
-    def changeMute(self, buttonID, actionID, newState):
-        pass
 
 def get_output_list():
     return mido.get_output_names()
@@ -229,13 +246,14 @@ def controllerButtonPressed(controllerID, buttonID):
         #if (globalButtonActionList[buttonID] != []):
         #print(globalButtonActionList[controllerID][buttonID])
         for action in globalButtonActionList[controllerID][buttonID]:
-            print(action.midiAction.midoMessageOn)
-            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+            #print(action.midiAction.midoMessageOn.note)
+            if (not action.isMuted):
+                mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
         end = time.time()
         print(end - start)
 
 def controllerButtonReleased(controllerID, buttonID):
         #if (globalButtonActionList[buttonID] != []):
         for action in globalButtonActionList[controllerID][buttonID]:
-            #print(mm.send_midi_message(action.midiPortName, action.midiAction.midoMessageOff))
-            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
+            if (not action.isMuted):
+                mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
