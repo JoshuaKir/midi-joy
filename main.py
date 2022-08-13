@@ -15,16 +15,16 @@ openControllerWindows = 0
 gameManager = game.GameManager()
 
 class pyGameEmitter_qthread(QObject):
-    eventSignal = pyqtSignal(gameManager.get_typing_of_event())
+    eventSignal = pyqtSignal(gameManager.get_typing_of_events())
 
     def __init__(self, joysticks):
         super(pyGameEmitter_qthread, self).__init__()
 
     def pyGameEmitter(self):
         while(1):
-            event = gameManager.get_event()
-            if(event):
-                self.eventSignal.emit(event)
+            events = gameManager.get_event()
+            if(len(events) > 0):
+                self.eventSignal.emit(events)
             '''
             if (openControllerWindows == 0):
                 self.threadedGameManager.run_event_loop()
@@ -123,10 +123,10 @@ class MainWindow(QMainWindow):
         else:
             self.controllerWindows[existingWindowIndex].activateWindow()
 
-    def send_event_to_controller_windows(self, event):
+    def send_event_to_controller_windows(self, events):
         for i, window in enumerate(self.controllerWindows):
             if (not window.isClosed):
-                window.process_game_event(event)
+                window.process_game_events(events)
             else:
                 self.controllerWindows.pop(i)
 

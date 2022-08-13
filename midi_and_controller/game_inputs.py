@@ -4,6 +4,7 @@ class GameManager:
     def __init__(self):
         game.init()
         game.joystick.init()
+        self.clock = game.time.Clock()
 
     def get_active_controllers(self):
         # function returns which controller is currently inputting
@@ -55,10 +56,7 @@ class GameManager:
 
     def get_event(self):
         #for running loop when no controllerWindows are opened
-        for event in game.event.get():
-            return event
-
-        return None
+        return game.event.get()
 
     def get_controller_inputs(self, controllerID):
         print(game.joystick.Joystick(controllerID).get_numballs())
@@ -67,14 +65,17 @@ class GameManager:
     def get_controllers(self):
         return game.joystick
 
-    def get_typing_of_event(self):
-        x = game.event.EventType
-        return (x)
+    def get_typing_of_events(self):
+        x = [game.event.EventType]
+        return (type(x))
 
     def get_joy_down_type(self):
         return game.JOYBUTTONDOWN
 
     def get_joy_up_type(self):
         return game.JOYBUTTONUP
+
+    def get_axis_motion_type(self):
+        return  game.JOYAXISMOTION
 #kinda funny
 #get_power_level

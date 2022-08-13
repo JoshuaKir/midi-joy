@@ -33,14 +33,3 @@ class AnimatedButton(QPushButton):
         self.fullAnimatedClick = QSequentialAnimationGroup()
         self.fullAnimatedClick.addAnimation(self.firstAnimation)
         self.fullAnimatedClick.addAnimation(self.secondAnimation)
-
-class FixedComboBox(QComboBox):
-    def __init__(self, *args, **kwargs):
-        self.index = 36
-        super(FixedComboBox, self).__init__(*args, **kwargs)
-
-    def setCurrentIndex(self, index):
-        self.blockSignals(True)
-        self.index = index
-        QComboBox.setCurrentIndex(self, index)
-        self.blockSignals(False)
