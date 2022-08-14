@@ -56,6 +56,7 @@ class GameManager:
 
     def get_event(self):
         #for running loop when no controllerWindows are opened
+        self.clock.tick(3000) #VITAL: significantly reduces lag to include a framerate
         return game.event.get()
 
     def get_controller_inputs(self, controllerID):

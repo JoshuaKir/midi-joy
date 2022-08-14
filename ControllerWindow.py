@@ -15,6 +15,7 @@ joyDown = gameManager.get_joy_down_type()
 joyUp = gameManager.get_joy_up_type()
 axisMotion = gameManager.get_axis_motion_type()
 controllerCount = gameManager.get_controllers().get_count()
+
 for controllerID in range(controllerCount):
     #controller->button->action
     print(controllerID)
@@ -96,9 +97,9 @@ class controllerWindow(QWidget):
                     controllerButtonReleased(self.controllerID, event.button)
 
                 elif (event.type == axisMotion):
-                    controllerAxisMoved(self.controllerID, event.axis, event.value)
                     newAxis = set([event.axis]).difference(self.lastFrameAnimationArray)  # sets are faster
                     if (len(newAxis) > 0 and abs(event.value) > 0.2):
+                        controllerAxisActivated(self.controllerID, event.axis, event.value)
                         self.animateAxisOn(event.axis)
                         self.axisAnimationArray.append(event.axis)
 
@@ -106,6 +107,7 @@ class controllerWindow(QWidget):
                     else:
                         for i, axis in enumerate(self.axisAnimationArray):
                             if (abs(event.value) < 0.2 and event.axis == axis):
+                                controllerAxisDeactivated(self.controllerID, event.axis, event.value)
                                 self.animateAxisOff(event.axis)
                                 self.axisAnimationArray.pop(i)
 
@@ -356,16 +358,26 @@ def controllerButtonReleased(controllerID, buttonID):
                 mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
 
 
-def controllerAxisMoved(controllerID, axisID, value):
+def controllerAxisActivated(controllerID, axisID, value):
     # if (globalButtonActionList[buttonID] != []):
     # print(globalButtonActionList[controllerID][buttonID])
     for action in globalAxisActionList[controllerID][axisID]:
         # print(action.midiAction.midoMessageOn.note)
-        if (not action.isMuted and abs(value) > 0.1):
+        if (not action.isMuted):
+            '''
             if (action.actionType == 0):
                 action.get_midiAction().set_velocity(int(abs(value) * 127))
+            '''
             if (action.actionType == 1):
                 action.get_midiAction().set_value(int(abs(value) * 127))
+
             mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
     end = time.time()
-    #print(end - start)
+
+def controllerAxisDeactivated(controllerID, axisID, value):
+    # if (globalButtonActionList[buttonID] != []):
+    # print(globalButtonActionList[controllerID][buttonID])
+    for action in globalAxisActionList[controllerID][axisID]:
+        # print(action.midiAction.midoMessageOn.note)
+        if (not action.isMuted):
+            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
