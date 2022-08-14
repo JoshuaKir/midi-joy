@@ -43,6 +43,16 @@ class ButtonAction():
 	def set_midiParameterValue(self, newState):
 		self.midiParameterValue = newState
 
+class AxisAction(ButtonAction):
+	def __init__(self, inputIndex=99, midiPort=2, actionType=0, previousState=False, midiParameterValue=100, isMuted=False):
+		self.connectedButtonIndex = -1
+		super(AxisAction, self).__init__(inputIndex, midiPort, actionType, previousState, midiParameterValue, isMuted)
+
+	def get_connectedButtonIndex(self):
+		return self.connectedButtonIndex
+
+	def set_connectedButtonIndex(self, index):
+		self.connectedButtonIndex = index
 
 def get_actionType_list():
 	return ['Midi Note', 'Control Change']

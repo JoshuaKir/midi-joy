@@ -138,4 +138,17 @@ for i in range(0, 11): #9octaves
 	sharpsList[10+(12*i)] = ('A#' + str(i+octaveShift))
 	sharpsList[11+(12*i)] = ('B ' + str(i+octaveShift))
 
-print('list', sharpsList[36])
+flatsList = {}
+for i in range(0, 11): #9octaves
+	flatsList[0+(12*i)] = ('C ' + str(i+octaveShift))
+	flatsList[1+(12*i)] = ('Db' + str(i+octaveShift))
+	flatsList[2+(12*i)] = ('D ' + str(i+octaveShift))
+	flatsList[3+(12*i)] = ('Eb' + str(i+octaveShift))
+	flatsList[4+(12*i)] = ('E ' + str(i+octaveShift))
+	flatsList[5+(12*i)] = ('F ' + str(i+octaveShift))
+	flatsList[6+(12*i)] = ('Gb' + str(i+octaveShift))
+	flatsList[7+(12*i)] = ('G ' + str(i+octaveShift))
+	flatsList[8+(12*i)] = ('Ab' + str(i+octaveShift))
+	flatsList[9+(12*i)] = ('A ' + str(i+octaveShift))
+	flatsList[10+(12*i)] = ('Bb' + str(i+octaveShift))
+	flatsList[11+(12*i)] = ('B ' + str(i+octaveShift))

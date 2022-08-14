@@ -151,7 +151,7 @@ class ButtonWindow(QWidget):
                 ###
                 if (globalAction.actionType == 0):
                     noteBox = QComboBox()
-                    noteList = list(midiManager.sharpsList.values())
+                    noteList = list(midiManager.flatsList.values())
                     noteBox.setToolTip("Midi Note")
                     noteBox.addItems(noteList)
                     noteBox.setCurrentIndex(-1)
@@ -252,9 +252,10 @@ class AxisWindow(QWidget):
                 muteBox.stateChanged.connect(lambda mute, controller=controllerID, axis=axisID, actionID=i, muteState=muteBox:
                     globalAxisActionList[controllerID][axis][actionID].set_mute(muteState.isChecked()))
                 ###
+                lastCol = 2
                 if (globalAction.actionType == 0):
                     noteBox = QComboBox()
-                    noteList = list(midiManager.sharpsList.values())
+                    noteList = list(midiManager.flatsList.values())
                     noteBox.setToolTip("Midi Note")
                     noteBox.addItems(noteList)
                     noteBox.setCurrentIndex(-1)
@@ -262,9 +263,20 @@ class AxisWindow(QWidget):
                     noteBox.activated.connect(lambda state, controller=controllerID, axis=axisID, actionID=i, note=noteBox:
                         globalAxisActionList[controllerID][axis][actionID].get_midiAction().set_note(note.currentIndex()))
                     actionList.addWidget(noteBox, i, 1)
+
+                    buttonList = ["Button 0: Open Strum"]
+                    for button in range(0, len(globalButtonActionList[controllerID])):
+                        buttonList.append('Button ' + str(button+1)) #this gives us open + all buttons
+                    buttonBox = QComboBox()
+                    buttonBox.setToolTip("Connected Button Box")
+                    buttonBox.addItems(buttonList) #list of 0 -> num of buttons: 0 will be open strum (-1)
+                    buttonBox.setCurrentIndex(-1)
+                    buttonBox.setCurrentIndex(globalAction.get_connectedButtonIndex() + 1)
+                    buttonBox.activated.connect(lambda state, controller=controllerID, axis=axisID, actionID=i, note=buttonBox:
+                        globalAxisActionList[controllerID][axis][actionID].set_connectedButtonIndex(buttonBox.currentIndex() - 1))
+                    actionList.addWidget(buttonBox, i, lastCol)
                 ###
                 if (globalAction.actionType == 1):
-                    lastCol = 2
                     controlBox = QSpinBox()
                     controlBox.setToolTip("Control Type")
                     controlBox.setMinimum(0)
@@ -323,9 +335,9 @@ class AxisWindow(QWidget):
         self.show()
 
     def addAction(self, controllerID, axisID):
-        global globalButtonActionList
+        global globalAxisActionList
         globalAction = globalAxisActionList[controllerID][axisID]
-        globalAction.append(inputs.ButtonAction(inputIndex=axisID))  # what
+        globalAction.append(inputs.AxisAction(inputIndex=axisID))  # what
         print(globalAction[len(globalAction) - 1].get_midiAction().get_note())
         portIndex = mm.open_port_with_name(globalAction[len(globalAction) - 1].midiPortName)
         globalAction[len(globalAction) - 1].set_midiPortOpenPortsIndex(portIndex)
@@ -359,19 +371,21 @@ def controllerButtonReleased(controllerID, buttonID):
 
 
 def controllerAxisActivated(controllerID, axisID, value):
-    # if (globalButtonActionList[buttonID] != []):
-    # print(globalButtonActionList[controllerID][buttonID])
-    for action in globalAxisActionList[controllerID][axisID]:
+    strummedNoteBool = False
+    openNoteIndex = -1
+    for i, action in enumerate(globalAxisActionList[controllerID][axisID]):
         # print(action.midiAction.midoMessageOn.note)
         if (not action.isMuted):
-            '''
-            if (action.actionType == 0):
-                action.get_midiAction().set_velocity(int(abs(value) * 127))
-            '''
+            if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
+                mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+                strummedNoteBool = True
+            if (action.get_connectedButtonIndex() == -1 and not action.isMuted):
+                openNoteIndex = i
             if (action.actionType == 1):
                 action.get_midiAction().set_value(int(abs(value) * 127))
-
-            mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+    if (not strummedNoteBool and openNoteIndex > -1):
+        action = globalAxisActionList[controllerID][axisID][openNoteIndex]
+        mm.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
     end = time.time()
 
 def controllerAxisDeactivated(controllerID, axisID, value):
