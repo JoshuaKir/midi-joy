@@ -6,19 +6,6 @@ class midiManager():
 		self.openOutputPorts = []
 
 	def send_midi_message(self, openPortIndex, msg):
-		'''
-		portIndex = -1
-		for i, port in enumerate(self.openOutputPorts):
-			if port.name == portName:
-				portIndex = i
-				break
-		
-		if (portIndex > -1): #port exists
-			if (self.openOutputPorts[portIndex].closed):
-				mido.open_output(portName)
-		else:
-			self.openOutputPorts.append(mido.open_output(portName))
-		'''	
 		self.openOutputPorts[openPortIndex].send(msg)
 			
 	def open_port_with_name(self, portName):

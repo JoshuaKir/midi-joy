@@ -14,9 +14,9 @@ class AnimatedButton(QPushButton):
     # https://www.pythonguis.com/tutorials/qpropertyanimation/
     def __init__(self, *args, **kwargs):
         super(AnimatedButton, self).__init__(*args, **kwargs)
-        self.setAnimationColor('#bb14e0')
+        self.set_animation_color('#bb14e0')
 
-    def setAnimationColor(self, colorHex):
+    def set_animation_color(self, colorHex):
         effect = QGraphicsColorizeEffect(self)
         effect.setColor(QtGui.QColor(0, 0, 0))
         self.setGraphicsEffect(effect)
