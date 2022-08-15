@@ -5,4 +5,7 @@ thorTest.py
 .idea/misc.xml
 .idea/midi_joy.iml
 .idea/inspectionProfiles/profiles_settings.xml
+/dist
+/build
+/notes
 *.pyc
