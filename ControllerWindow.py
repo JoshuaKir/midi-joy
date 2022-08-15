@@ -1,12 +1,15 @@
-from PyQt6.QtWidgets import QApplication, QVBoxLayout, QGridLayout, QWidget, QSizePolicy, QComboBox, QCheckBox, QSpinBox, QSpacerItem, QFrame
-from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
+from PyQt6.QtWidgets import QApplication, QVBoxLayout, QGridLayout, QWidget, QSizePolicy, \
+    QComboBox, QCheckBox, QSpinBox, QSpacerItem, QFrame, QMenuBar, QFileDialog
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtCore import Qt
+import mido
+import time
+import os
 from midi_and_controller import game_inputs as game
 from midi_and_controller import InputButton as inputs
 from midi_and_controller import midiManager
 from ui_elements import midi_joy_style as mjs
-import mido
-import time
+import pickle
 
 globalButtonActionList = []
 globalAxisActionList = []
@@ -28,6 +31,7 @@ class ControllerWindow(QWidget):
 
     def __init__(self, controllerName, controllerID, controllerGUID):
         super().__init__()
+        #self.setWindowFlags(Qt.FramelessWindowHint)
         self.controller = controllerName
         self.isClosed = False
         self.axisAnimationArray = []
@@ -41,7 +45,27 @@ class ControllerWindow(QWidget):
         self.controllerButtons = []
         self.midiActions = []
         colorArray = mjs.colorArray
-        axes,buttons = gameManager.get_controller_inputs(controllerID)
+        axes, buttons = gameManager.get_controller_inputs(controllerID)
+
+        # Save action
+        saveAction = QAction('&Save', self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip('Create Controller Save File')
+        saveAction.triggered.connect(self.save_controller_configuration)
+
+        # Load action
+        loadAction = QAction('&Load', self)
+        loadAction.setShortcut('Ctrl+O')
+        loadAction.setStatusTip('Load Controller Save File')
+        loadAction.triggered.connect(self.load_controller_configuration)
+
+        menuBar = QMenuBar()
+        fileMenu = menuBar.addMenu('&File')
+        fileMenu.addAction(saveAction)
+        fileMenu.addAction(loadAction)
+        menuBar.addMenu(fileMenu)
+        self.layout.setMenuBar(menuBar)
+
         self.buttons = QGridLayout()
         for i in range(0, buttons):
             globalButtonActionList[controllerID].append([])
@@ -126,6 +150,59 @@ class ControllerWindow(QWidget):
     def close_event(self, event):
         self.isClosed = True
         event.accept()
+
+    def save_controller_configuration(self):
+        #save function saves a nested array of every action for every button and axis to a file
+        buttonSaveList = []
+        currentDir = os.path.dirname(os.path.realpath(__file__))
+        fileName = QFileDialog.getSaveFileName(None, 'Save Configuration:', currentDir, 'Midi Joy Save File (*.mj_controller)')
+        if (fileName[0] == ''):
+            return 1
+        for i, button in enumerate(globalButtonActionList[self.controllerID]):
+            buttonSaveList.append([])
+            for action in button:
+                buttonSaveList[i].append(action)
+
+        axisSaveList = []
+        for i, axis in enumerate(globalAxisActionList[self.controllerID]):
+            axisSaveList.append([])
+            for action in axis:
+                axisSaveList[i].append(action)
+
+        with open(fileName[0], 'wb') as mj_file:
+            pickle.dump([buttonSaveList, axisSaveList], mj_file)
+
+        return 0 #successful save
+
+    def load_controller_configuration(self):
+        currentDir = os.path.dirname(os.path.realpath(__file__))
+        fileName = QFileDialog.getOpenFileName(None, 'Load Configuration:', currentDir, 'Midi Joy Save File (*.mj_controller)')
+        if (fileName[0] == ''):
+            return 1
+        with open(fileName[0], 'rb') as mj_file:
+            buttonList, axisList = pickle.load(mj_file)
+
+        #remove current configuration
+        for button in globalButtonActionList[self.controllerID]:
+            button = []
+
+        for button in buttonList:
+            if button and button[0].inputIndex < len(globalButtonActionList[self.controllerID]):
+                globalButtonActionList[self.controllerID][button[0].inputIndex] = button
+                for action in button:
+                    mm.open_port_with_name(action.midiPortName) #need to open ports in case not yet open
+
+        # remove current configuration
+        for axis in globalAxisActionList[self.controllerID]:
+            axis = []
+
+        for axis in axisList:
+            if axis and axis[0].inputIndex < len(globalAxisActionList[self.controllerID]):
+                globalAxisActionList[self.controllerID][axis[0].inputIndex] = axis
+                for action in axis:
+                    mm.open_port_with_name(action.midiPortName) #need to open ports in case not yet open
+
+        return 0 #successful load
 
 class ButtonWindow(QWidget):
 
