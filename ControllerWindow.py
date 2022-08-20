@@ -105,35 +105,33 @@ class ControllerWindow(QWidget):
     def axis_clicked(self, controllerID, axisID):
         self.actionWindows.append(AxisWindow(controllerID=controllerID, axisID=axisID, globalActionList=globalAxisActionList[self.controllerID]))
 
-    def process_game_events(self, events):
+    def process_game_events(self, event):
         global start
         start = time.time()
         # newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
-        for event in events:
-            if (event.joy == self.controllerID):
-                if (event.type == joyDown):
-                    controller_button_pressed(self.controllerID, event.button)
-                    self.animate_button(event.button)
+        if (event.joy == self.controllerID):
+            if (event.type == joyDown):
+                controller_button_pressed(self.controllerID, event.button)
+                self.animate_button(event.button)
 
-                elif (event.type == joyUp):
-                    controller_button_released(self.controllerID, event.button)
+            elif (event.type == joyUp):
+                controller_button_released(self.controllerID, event.button)
 
-                elif (event.type == axisMotion):
-                    newAxis = set([event.axis]).difference(self.lastFrameAnimationArray)  # sets are faster
-                    if (len(newAxis) > 0 and abs(event.value) > 0.2):
-                        controller_axis_activated(self.controllerID, event.axis, event.value)
-                        self.animate_axis_on(event.axis)
-                        self.axisAnimationArray.append(event.axis)
+            elif (event.type == axisMotion):
+                newAxis = set([event.axis]).difference(self.lastFrameAnimationArray)  # sets are faster
+                if (len(newAxis) > 0 and abs(event.value) > 0.2):
+                    controller_axis_activated(self.controllerID, event.axis, event.value)
+                    self.animate_axis_on(event.axis)
+                    self.axisAnimationArray.append(event.axis)
 
+                else:
+                    for i, axis in enumerate(self.axisAnimationArray):
+                        if (abs(event.value) < 0.2 and event.axis == axis):
+                            controller_axis_deactivated(self.controllerID, event.axis, event.value)
+                            self.animate_axis_off(event.axis)
+                            self.axisAnimationArray.pop(i)
 
-                    else:
-                        for i, axis in enumerate(self.axisAnimationArray):
-                            if (abs(event.value) < 0.2 and event.axis == axis):
-                                controller_axis_deactivated(self.controllerID, event.axis, event.value)
-                                self.animate_axis_off(event.axis)
-                                self.axisAnimationArray.pop(i)
-
-                    self.lastFrameAnimationArray = self.axisAnimationArray
+                self.lastFrameAnimationArray = self.axisAnimationArray
 
     def animate_button(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()

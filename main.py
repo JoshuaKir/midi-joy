@@ -11,8 +11,8 @@ import time
 
 start = time.time()
 end = time.time()
-openControllerWindows = 0
 gameManager = game.GameManager()
+acceptedInputTypes = gameManager.get_accepted_action_types()
 
 class PyGameEmitter_qthread(QObject):
     eventSignal = pyqtSignal(gameManager.get_typing_of_events())
@@ -23,7 +23,7 @@ class PyGameEmitter_qthread(QObject):
     def py_game_emitter(self):
         while(1):
             events = gameManager.get_event()
-            if(len(events) > 0):
+            if (len(events) > 0):
                 self.eventSignal.emit(events)
 
 class PyGameMainMenuAnimation_qthread(QObject):
@@ -50,6 +50,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Midi Joy")
         self.controllerWindows = []
+        for i in range(0, gameManager.get_controllers().get_count()): # list of lists so we can send actions to corresponding controllers
+            self.controllerWindows.append([])
         self.layout = QVBoxLayout()
         
         self.joysticks = [gameManager.get_controllers().Joystick(x) for x in range(gameManager.get_controllers().get_count())]
@@ -90,31 +92,22 @@ class MainWindow(QMainWindow):
 
     def controller_clicked(self, controllerName, controllerID, controllerGUID):
         print(controllerName, controllerID, controllerGUID)
-        global openControllerWindows
         #first remove any closed windows
-        for i, window in enumerate(self.controllerWindows):
+        for i, window in enumerate(self.controllerWindows[controllerID]):
             if (window.isClosed):
-                self.controllerWindows.pop(i)
-                openControllerWindows -= 1
+                self.controllerWindows[controllerID].pop(i)
 
-        existingWindowIndex = -1
-        for i, window in enumerate(self.controllerWindows):
-            if (window.controllerID == controllerID):
-                existingWindowIndex = i
-                
-        if (existingWindowIndex == -1):
-            self.controllerWindows.append(cw.ControllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
-            self.controllerWindows[len(self.controllerWindows)-1].show()
-            openControllerWindows += 1
-        else:
-            self.controllerWindows[existingWindowIndex].activateWindow()
+        self.controllerWindows[controllerID].append(cw.ControllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
+        self.controllerWindows[controllerID][len(self.controllerWindows[controllerID])-1].show()
 
     def send_event_to_controller_windows(self, events):
-        for i, window in enumerate(self.controllerWindows):
-            if (not window.isClosed):
-                window.process_game_events(events)
-            else:
-                self.controllerWindows.pop(i)
+        for event in events:
+            if (event.type in acceptedInputTypes and len((self.controllerWindows[event.joy])) > 0): #if there are windows for controller
+                for i, window in enumerate(self.controllerWindows[event.joy]):
+                    if (not window.isClosed):
+                        window.process_game_events(event)
+                    else:
+                        self.controllerWindows[event.joy].pop(i)
 
     def animate_button(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()

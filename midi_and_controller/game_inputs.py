@@ -5,6 +5,7 @@ class GameManager:
         game.init()
         game.joystick.init()
         self.clock = game.time.Clock()
+        self.frameRate = 1000
 
     def get_active_controllers(self):
         # function returns which controller is currently inputting
@@ -56,7 +57,7 @@ class GameManager:
 
     def get_event(self):
         #for running loop when no controllerWindows are opened
-        self.clock.tick(3000) #VITAL: significantly reduces lag to include a framerate
+        self.clock.tick(self.frameRate) #VITAL: significantly reduces lag to include a framerate
         return game.event.get()
 
     def get_controller_inputs(self, controllerID):
@@ -78,5 +79,8 @@ class GameManager:
 
     def get_axis_motion_type(self):
         return  game.JOYAXISMOTION
+
+    def get_accepted_action_types(self):
+        return [game.JOYBUTTONUP, game.JOYBUTTONDOWN, game.JOYAXISMOTION, game.JOYHATMOTION]
 #kinda funny
 #get_power_level
