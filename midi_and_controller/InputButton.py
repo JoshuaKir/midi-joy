@@ -10,9 +10,7 @@ class ButtonAction():
 		self.actionType = actionType
 		self.previousState = previousState
 		self.midiParameterValue = midiParameterValue
-		self.isMuted = isMuted		
-		#print("test "+ str(self.midiPort))
-		#self.midiPort = mido.open_output(get_output_list()[self.midiPortIndex])
+		self.isMuted = isMuted
 		if (actionType == 0):
 			self.midiAction = midiNote()
 		elif (actionType == 1):

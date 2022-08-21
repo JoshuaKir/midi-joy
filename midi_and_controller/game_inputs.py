@@ -62,7 +62,9 @@ class GameManager:
 
     def get_controller_inputs(self, controllerID):
         print(game.joystick.Joystick(controllerID).get_numballs())
-        return[game.joystick.Joystick(controllerID).get_numaxes(), game.joystick.Joystick(controllerID).get_numbuttons()]
+        return[game.joystick.Joystick(controllerID).get_numaxes(),
+               game.joystick.Joystick(controllerID).get_numbuttons(),
+               game.joystick.Joystick(controllerID).get_numhats()]
 
     def get_controllers(self):
         return game.joystick
@@ -79,6 +81,9 @@ class GameManager:
 
     def get_axis_motion_type(self):
         return  game.JOYAXISMOTION
+
+    def get_hat_motion_type(self):
+        return  game.JOYHATMOTION
 
     def get_accepted_action_types(self):
         return [game.JOYBUTTONUP, game.JOYBUTTONDOWN, game.JOYAXISMOTION, game.JOYHATMOTION]
