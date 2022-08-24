@@ -213,8 +213,14 @@ class ControllerWindow(QWidget):
             for action in axis:
                 axisSaveList[i].append(action)
 
+        hatSaveList = []
+        for i, hat in enumerate(globalHatActionList[self.controllerID]):
+            hatSaveList.append([])
+            for action in hat:
+                hatSaveList[i].append(action)
+
         with open(fileName[0], 'wb') as mj_file:
-            pickle.dump([buttonSaveList, axisSaveList], mj_file)
+            pickle.dump([buttonSaveList, axisSaveList, hatSaveList], mj_file)
 
         return 0 #successful save
 
@@ -224,7 +230,7 @@ class ControllerWindow(QWidget):
         if (fileName[0] == ''):
             return 1
         with open(fileName[0], 'rb') as mj_file:
-            buttonList, axisList = pickle.load(mj_file)
+            buttonList, axisList, hatList = pickle.load(mj_file)
 
         #remove current configuration
         for button in globalButtonActionList[self.controllerID]:
@@ -245,6 +251,16 @@ class ControllerWindow(QWidget):
                 globalAxisActionList[self.controllerID][axis[0].inputIndex] = axis
                 for action in axis:
                     mm.open_port_with_name(action.midiPortName) #need to open ports in case not yet open
+
+        # remove current configuration
+        for hat in globalHatActionList[self.controllerID]:
+            hat = []
+
+        for hat in hatList:
+            if hat and hat[0].inputIndex < len(globalHatActionList[self.controllerID]):
+                globalHatActionList[self.controllerID][hat[0].inputIndex] = hat
+                for action in hat:
+                    mm.open_port_with_name(action.midiPortName)  # need to open ports in case not yet open
 
         return 0 #successful load
 
