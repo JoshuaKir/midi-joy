@@ -6,13 +6,15 @@ from PyQt6.QtCore import QObject, QThread, pyqtSignal, QSequentialAnimationGroup
 import qdarkstyle
 from ui_elements import midi_joy_style as mjs
 from midi_and_controller import game_inputs as game
-import ControllerWindow as cw
+from midi_and_controller import midiManager
+from ui_elements import ControllerWindow
 import time
 
 start = time.time()
 end = time.time()
 gameManager = game.GameManager()
 acceptedInputTypes = gameManager.get_accepted_action_types()
+midi = midiManager.midiManager()
 
 class PyGameEmitter_qthread(QObject):
     eventSignal = pyqtSignal(gameManager.get_typing_of_events())
@@ -97,7 +99,7 @@ class MainWindow(QMainWindow):
             if (window.isClosed):
                 self.controllerWindows[controllerID].pop(i)
 
-        self.controllerWindows[controllerID].append(cw.ControllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID))
+        self.controllerWindows[controllerID].append(ControllerWindow.ControllerWindow(controllerName=controllerName, controllerID=controllerID, controllerGUID=controllerGUID, midiManager=midi))
         self.controllerWindows[controllerID][len(self.controllerWindows[controllerID])-1].show()
 
     def send_event_to_controller_windows(self, events):
