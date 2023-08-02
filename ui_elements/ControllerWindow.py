@@ -274,12 +274,12 @@ class ControllerWindow(QWidget):
     def controller_axis_activated(self, axisID, value):
         self.midiedNoteBool = False
         for action in self.axisActionList[axisID]:
-            if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
+            if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
                 self.midiedNoteBool = True
 
         for action in self.axisActionList[axisID]:
             if (not action.isMuted and action.actionType == 0):
-                if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
+                if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
                     self.midiedNoteBool = True
                 if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):
@@ -297,12 +297,12 @@ class ControllerWindow(QWidget):
     def controller_hat_activated(self, hatID, value):
         self.midiedNoteBool = False
         for action in self.hatActionList[hatID]:
-            if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
+            if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
                 self.midiedNoteBool = True
 
         for action in self.hatActionList[hatID]:
             if (not action.isMuted and action.actionType == 0):
-                if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
+                if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
                     self.midiedNoteBool = True
                 if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):

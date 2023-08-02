@@ -156,8 +156,8 @@ class ButtonWindow(QWidget):
         self.__init__(controllerID, buttonID, self.actionList)
 
 class AxisWindow(ButtonWindow):
-    def __init__(self, controllerID, axisID, globalActionList):
-        super().__init__(controllerID, axisID, actionList)
+    def __init__(self, controllerID, axisID, actionList, midiManager):
+        super().__init__(controllerID, axisID, actionList, midiManager)
         self.setWindowTitle("Midi Joy: Axis: " + str(axisID+1))
 
     def add_action_ui(self, actionID):
@@ -197,7 +197,7 @@ class AxisWindow(ButtonWindow):
         self.add_action_button_ui()
 
     def add_action(self, controllerID, buttonID):
-        globalAction = self.actionList[self.buttonID][buttonID]
+        globalAction = self.actionList[buttonID]
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
@@ -207,22 +207,22 @@ class AxisWindow(ButtonWindow):
 
     def add_connected_button_box(self, actionID):
         buttonList = ["Button 0: Open Strum"]
-        for button in range(0, len(globalButtonActionList[self.controllerID])):
+        for button in range(0, len(self.actionList)):
             buttonList.append('Button ' + str(button + 1))  # this gives us open + all buttons
         buttonBox = QComboBox()
         buttonBox.setToolTip("Connected Button Box")
         buttonBox.addItems(buttonList)  # list of 0 -> num of buttons: 0 will be open strum (-1)
         buttonBox.setCurrentIndex(-1)
-        buttonBox.setCurrentIndex(self.aglobalActionList[self.buttonID][actionID].get_connectedButtonIndex() + 1)
+        buttonBox.setCurrentIndex(self.actionList[self.buttonID][actionID].get_connectedButtonIndex() + 1)
         buttonBox.activated.connect(
-            lambda state, controller=controllerID, axis=self.buttonID, actionID=actionID, note=buttonBox:
-            self.globalActionList[self.buttonID][actionID].set_connectedButtonIndex(
+            lambda state, axis=self.buttonID, actionID=actionID, note=buttonBox:
+            self.actionList[self.buttonID][actionID].set_connectedButtonIndex(
                 buttonBox.currentIndex() - 1))
         return buttonBox
 
 class HatWindow(AxisWindow):
-    def __init__(self, controllerID, axisID, globalActionList):
-        super().__init__(controllerID, axisID, actionList)
+    def __init__(self, controllerID, axisID, actionList, midiManager):
+        super().__init__(controllerID, axisID, actionList, midiManager)
         self.setWindowTitle("Midi Joy: Hat: " + str(axisID+1))
 
     def add_action_ui(self, actionID):
@@ -262,7 +262,7 @@ class HatWindow(AxisWindow):
         self.add_action_button_ui()
 
     def add_action(self, controllerID, buttonID):
-        globalAction = self.actionList[self.buttonID][buttonID]
+        globalAction = self.actionList[buttonID]
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
