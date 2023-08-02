@@ -25,7 +25,6 @@ for controllerID in range(controllerCount):
     globalButtonActionList.append([])
     globalAxisActionList.append([])
     globalHatActionList.append([])
-#self.midi = self.midi.self.midi()
 start = time.time()
 end = time.time()
 
@@ -33,6 +32,11 @@ class ControllerWindow(QWidget):
 
     def __init__(self, controllerName, controllerID, controllerGUID, midiManager):
         super().__init__()
+        for controller in range(controllerCount):
+            #controller->button->action
+            self.buttonActionList = []
+            self.axisActionList = []
+            self.hatActionList = []
         #self.setWindowFlags(Qt.FramelessWindowHint)
         self.controller = controllerName
         self.midi = midiManager
@@ -74,7 +78,7 @@ class ControllerWindow(QWidget):
 
         self.buttons = QGridLayout()
         for i in range(0, buttons):
-            globalButtonActionList[controllerID].append([])
+            self.buttonActionList.append([])
             self.controllerButtons.append(mjs.AnimatedButton("Button: " + str(i+1)))
             self.controllerButtons[i].set_animation_color(colorArray[i%len(colorArray)])
             self.controllerButtons[i].setSizePolicy(
@@ -88,7 +92,7 @@ class ControllerWindow(QWidget):
         self.axesAndHats = QGridLayout()
         axisLastRow = 0
         for i in range(0, axes):
-            globalAxisActionList[controllerID].append([])
+            self.axisActionList.append([])
             self.controllerAxes.append(mjs.AnimatedButton("Axis: " + str(i+1)))
             self.controllerAxes[i].set_animation_color(colorArray[i%len(colorArray)])
             self.controllerAxes[i].setSizePolicy(
@@ -100,7 +104,7 @@ class ControllerWindow(QWidget):
             self.axesAndHats.addWidget(self.controllerAxes[i], rowCount, i-rowCount*2)
 
         for i in range(0, hats):
-            globalHatActionList[controllerID].append([])
+            self.hatActionList.append([])
             self.controllerHats.append(mjs.AnimatedButton("Hats: " + str(i + 1)))
             self.controllerHats[i].set_animation_color(colorArray[i % len(colorArray)])
             self.controllerHats[i].setSizePolicy(
@@ -119,13 +123,13 @@ class ControllerWindow(QWidget):
         self.setLayout(self.layout)
 
     def button_clicked(self, controllerID, buttonID):
-        self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, globalActionList=globalButtonActionList[self.controllerID], midiManager=self.midi))
+        self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, actionList=self.buttonActionList, midiManager=self.midi))
 
     def axis_clicked(self, controllerID, axisID):
-        self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, globalActionList=globalAxisActionList[self.controllerID], midiManager=self.midi))
+        self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, actionList=self.axisActionList, midiManager=self.midi))
 
     def hat_clicked(self, controllerID, hatID):
-        self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, globalActionList=globalHatActionList[self.controllerID], midiManager=self.midi))
+        self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, actionList=self.hatActionList, midiManager=self.midi))
 
     def process_game_events(self, event):
         global start
@@ -133,23 +137,23 @@ class ControllerWindow(QWidget):
         # newButtons = set(currentButtonIDs).difference(lastFrameButtonIDs) #sets are faster
         if (event.joy == self.controllerID):
             if (event.type == joyDown):
-                self.controller_button_pressed(self.controllerID, event.button)
+                self.controller_button_pressed(event.button)
                 self.animate_button(event.button)
 
             elif (event.type == joyUp):
-                self.controller_button_released(self.controllerID, event.button)
+                self.controller_button_released(event.button)
 
             elif (event.type == axisMotion):
                 newAxis = set([event.axis]).difference(self.lastFrameAxisAnimationArray)  # sets are faster
                 if (len(newAxis) > 0 and abs(event.value) > 0.2):
-                    self.controller_axis_activated(self.controllerID, event.axis, event.value)
+                    self.controller_axis_activated(event.axis, event.value)
                     self.animate_axis_on(event.axis)
                     self.axisAnimationArray.append(event.axis)
 
                 else:
                     for i, axis in enumerate(self.axisAnimationArray):
                         if (abs(event.value) < 0.2 and event.axis == axis):
-                            self.controller_axis_deactivated(self.controllerID, event.axis, event.value)
+                            self.controller_axis_deactivated(event.axis, event.value)
                             self.animate_axis_off(event.axis)
                             self.axisAnimationArray.pop(i)
 
@@ -158,14 +162,14 @@ class ControllerWindow(QWidget):
             elif (event.type == hatMotion):
                 newHat = set([event.hat]).difference(self.lastFrameHatAnimationArray)  # sets are faster
                 if (len(newHat) > 0 and (abs(event.value[0]) > 0 or abs(event.value[1]) > 0)):
-                    self.controller_hat_activated(self.controllerID, event.hat, event.value)
+                    self.controller_hat_activated(event.hat, event.value)
                     self.animate_hat_on(event.hat)
                     self.hatAnimationArray.append(event.hat)
 
                 else:
                     for i, hat in enumerate(self.hatAnimationArray):
                         if (event.hat == hat and (abs(event.value[0]) == 0 or abs(event.value[1]) == 0)):
-                            self.controller_hat_deactivated(self.controllerID, event.hat, event.value)
+                            self.controller_hat_deactivated(event.hat, event.value)
                             self.animate_hat_off(event.hat)
                             self.hatAnimationArray.pop(i)
 
@@ -197,30 +201,13 @@ class ControllerWindow(QWidget):
 
     def save_controller_configuration(self):
         #save function saves a nested array of every action for every button and axis to a file
-        buttonSaveList = []
         currentDir = os.path.dirname(os.path.realpath(__file__))
         fileName = QFileDialog.getSaveFileName(None, 'Save Configuration:', currentDir, 'Midi Joy Save File (*.mj_controller)')
         if (fileName[0] == ''):
             return 1
-        for i, button in enumerate(globalButtonActionList[self.controllerID]):
-            buttonSaveList.append([])
-            for action in button:
-                buttonSaveList[i].append(action)
-
-        axisSaveList = []
-        for i, axis in enumerate(globalAxisActionList[self.controllerID]):
-            axisSaveList.append([])
-            for action in axis:
-                axisSaveList[i].append(action)
-
-        hatSaveList = []
-        for i, hat in enumerate(globalHatActionList[self.controllerID]):
-            hatSaveList.append([])
-            for action in hat:
-                hatSaveList[i].append(action)
 
         with open(fileName[0], 'wb') as mj_file:
-            pickle.dump([buttonSaveList, axisSaveList, hatSaveList], mj_file)
+            pickle.dump([self.buttonActionList, self.axisActionList, self.hatActionList], mj_file)
 
         return 0 #successful save
 
@@ -233,32 +220,32 @@ class ControllerWindow(QWidget):
             buttonList, axisList, hatList = pickle.load(mj_file)
 
         #remove current configuration
-        for button in globalButtonActionList[self.controllerID]:
+        for button in self.buttonActionList:
             button = []
 
         for button in buttonList:
-            if button and button[0].inputIndex < len(globalButtonActionList[self.controllerID]):
-                globalButtonActionList[self.controllerID][button[0].inputIndex] = button
+            if button and button[0].inputIndex < len(self.buttonActionList):
+                self.buttonActionList[button[0].inputIndex] = button
                 for action in button:
                     self.midi.open_port_with_name(action.midiPortName) #need to open ports in case not yet open
 
         # remove current configuration
-        for axis in globalAxisActionList[self.controllerID]:
+        for axis in self.axisActionList:
             axis = []
 
         for axis in axisList:
-            if axis and axis[0].inputIndex < len(globalAxisActionList[self.controllerID]):
-                globalAxisActionList[self.controllerID][axis[0].inputIndex] = axis
+            if axis and axis[0].inputIndex < len(self.axisActionList):
+                self.axisActionList[axis[0].inputIndex] = axis
                 for action in axis:
                     self.midi.open_port_with_name(action.midiPortName) #need to open ports in case not yet open
 
         # remove current configuration
-        for hat in globalHatActionList[self.controllerID]:
+        for hat in self.hatActionList:
             hat = []
 
         for hat in hatList:
-            if hat and hat[0].inputIndex < len(globalHatActionList[self.controllerID]):
-                globalHatActionList[self.controllerID][hat[0].inputIndex] = hat
+            if hat and hat[0].inputIndex < len(self.hatActionList):
+                self.hatActionList[hat[0].inputIndex] = hat
                 for action in hat:
                     self.midi.open_port_with_name(action.midiPortName)  # need to open ports in case not yet open
 
@@ -267,64 +254,64 @@ class ControllerWindow(QWidget):
     def get_output_list(self):
         return mido.get_output_names()
 
-    def controller_button_pressed(self, controllerID, buttonID):
+    def controller_button_pressed(self, buttonID):
             #if (globalButtonActionList[buttonID] != []):
             #print(globalButtonActionList[controllerID][buttonID])
-            for action in globalButtonActionList[controllerID][buttonID]:
+            for action in self.buttonActionList[buttonID]:
                 #print(action.midiAction.midoMessageOn.note)
                 if (not action.isMuted):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
             end = time.time()
             print(end - start)
 
-    def controller_button_released(self, controllerID, buttonID):
+    def controller_button_released(self, buttonID):
             #if (globalButtonActionList[buttonID] != []):
-            for action in globalButtonActionList[controllerID][buttonID]:
+            for action in self.buttonActionList[buttonID]:
                 if (not action.isMuted):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
 
 
-    def controller_axis_activated(self, controllerID, axisID, value):
-        struself.midiedNoteBool = False
-        for action in globalAxisActionList[controllerID][axisID]:
+    def controller_axis_activated(self, axisID, value):
+        self.midiedNoteBool = False
+        for action in self.axisActionList[axisID]:
             if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
-                struself.midiedNoteBool = True
+                self.midiedNoteBool = True
 
-        for action in globalAxisActionList[controllerID][axisID]:
+        for action in self.axisActionList[axisID]:
             if (not action.isMuted and action.actionType == 0):
                 if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
-                    struself.midiedNoteBool = True
-                if (action.get_connectedButtonIndex() == -1 and not struself.midiedNoteBool):
+                    self.midiedNoteBool = True
+                if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
 
             elif (action.actionType == 1):
                 action.get_midiAction().set_value(int(abs(value) * 127))
                 self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
 
-    def controller_axis_deactivated(self, controllerID, axisID, value):
-        for action in globalAxisActionList[controllerID][axisID]:
+    def controller_axis_deactivated(self, axisID, value):
+        for action in self.axisActionList[axisID]:
             if (not action.isMuted):
                 self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
 
-    def controller_hat_activated(self, controllerID, hatID, value):
-        struself.midiedNoteBool = False
-        for action in globalHatActionList[controllerID][hatID]:
+    def controller_hat_activated(self, hatID, value):
+        self.midiedNoteBool = False
+        for action in self.hatActionList[hatID]:
             if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
-                struself.midiedNoteBool = True
+                self.midiedNoteBool = True
 
-        for action in globalHatActionList[controllerID][hatID]:
+        for action in self.hatActionList[hatID]:
             if (not action.isMuted and action.actionType == 0):
                 if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(controllerID)):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
-                    struself.midiedNoteBool = True
-                if (action.get_connectedButtonIndex() == -1 and not struself.midiedNoteBool):
+                    self.midiedNoteBool = True
+                if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):
                     self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
 
             elif (not action.isMuted and action.actionType == 1):
                 action.get_midiAction().set_value(int(abs(value) * 127))
 
-    def controller_hat_deactivated(self, controllerID, hatID, value):
-        for action in globalHatActionList[controllerID][hatID]:
+    def controller_hat_deactivated(self, hatID, value):
+        for action in self.hatActionList[hatID]:
             if (not action.isMuted):
                 self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)

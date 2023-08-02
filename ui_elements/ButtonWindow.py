@@ -8,15 +8,14 @@ from midi_and_controller import midiManager
 
 class ButtonWindow(QWidget):
 
-    def __init__(self, controllerID, buttonID, globalActionList, midiManager):
+    def __init__(self, controllerID, buttonID, actionList, midiManager):
         super().__init__()
         self.setWindowTitle("Midi Joy: button: " + str(buttonID+1))
-        self.globalActionList = globalActionList
+        self.actionList = actionList
         self.midi = midiManager
         self.layout = QVBoxLayout()
         self.controllerID = controllerID
         self.buttonID = buttonID
-        self.actionTest = []
         self.add_action_button_ui()
         self.update_ui()
         self.show()
@@ -24,20 +23,20 @@ class ButtonWindow(QWidget):
     def update_ui(self):
         #add actionlist populating
         global globalButtonActionList
-        for i in range(0, len(self.globalActionList[self.buttonID])):
+        for i in range(0, len(self.actionList[self.buttonID])):
             self.add_action_ui(i)
 
     def add_action_ui(self, actionID):
         global globalButtonActionList
-        globalAction = self.globalActionList[self.buttonID][actionID]
+        action = self.actionList[self.buttonID][actionID]
         actionList = QGridLayout()
         lastCol = 1
         muteBox = self.add_mute_box(actionID)
         ###
-        if (globalAction.actionType == 0):
+        if (action.actionType == 0):
             actionList.addWidget(self.add_note_box(actionID), actionID, 1)
         ###
-        if (globalAction.actionType == 1):
+        if (action.actionType == 1):
             lastCol = 2
             actionList.addWidget(self.add_control_type_box(actionID), actionID, 1)
             actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol)
@@ -77,7 +76,7 @@ class ButtonWindow(QWidget):
         muteBox.setToolTip("Mute")
         muteBox.stateChanged.connect(
             lambda mute, controller=self.controllerID, button=self.buttonID, actionID=actionID, muteState=muteBox:
-            self.globalActionList[self.buttonID][actionID].set_mute(muteState.isChecked()))
+            self.actionList[self.buttonID][actionID].set_mute(muteState.isChecked()))
         return muteBox
 
     def add_note_box(self, actionID):
@@ -86,10 +85,10 @@ class ButtonWindow(QWidget):
         noteBox.setToolTip("Midi Note")
         noteBox.addItems(noteList)
         noteBox.setCurrentIndex(-1)
-        noteBox.setCurrentIndex(self.globalActionList[self.buttonID][actionID].midiAction.get_note())
+        noteBox.setCurrentIndex(self.actionList[self.buttonID][actionID].midiAction.get_note())
         noteBox.activated.connect(
             lambda state, note=noteBox:
-            self.globalActionList[self.buttonID][actionID].get_midiAction().set_note(note.currentIndex()))
+            self.actionList[self.buttonID][actionID].get_midiAction().set_note(note.currentIndex()))
         return noteBox
 
     def add_control_type_box(self, actionID):
@@ -101,7 +100,7 @@ class ButtonWindow(QWidget):
         controlBox.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         controlBox.valueChanged.connect(
             lambda state, value=controlBox:
-            self.globalActionList[self.buttonID][actionID].get_midiAction().set_control(value.value()))
+            self.actionList[self.buttonID][actionID].get_midiAction().set_control(value.value()))
         return controlBox
 
     def add_control_value_box(self, actionID):
@@ -112,7 +111,7 @@ class ButtonWindow(QWidget):
         controlValue.setPrefix('Control Change Value: ')
         controlValue.valueChanged.connect(
             lambda state, value=controlValue:
-            self.globalActionList[self.buttonID][actionID].get_midiAction().set_value(
+            self.actionList[self.buttonID][actionID].get_midiAction().set_value(
                 value.value()))
         return controlValue
 
@@ -120,13 +119,13 @@ class ButtonWindow(QWidget):
         midiPort = QComboBox()
         midiPortList = self.midi.get_output_list()
         midiPort.addItems(midiPortList)
-        midiPort.setCurrentIndex(midiPortList.index(self.globalActionList[self.buttonID][actionID].midiPortName))
-        self.midi.open_port_with_name(self.globalActionList[self.buttonID][actionID].midiPortName)
+        midiPort.setCurrentIndex(midiPortList.index(self.actionList[self.buttonID][actionID].midiPortName))
+        self.midi.open_port_with_name(self.actionList[self.buttonID][actionID].midiPortName)
         midiPort.currentIndexChanged.connect(lambda port, newAction=midiPort:
-                                             self.globalActionList[self.buttonID][actionID].set_midiPort(
+                                             self.actionList[self.buttonID][actionID].set_midiPort(
                                                  newAction.currentIndex()))
         midiPort.currentIndexChanged.connect(lambda port, actionID=actionID, newAction=midiPort:
-                                             self.globalActionList[self.buttonID][actionID].set_midiPortOpenPortsIndex(
+                                             self.actionList[self.buttonID][actionID].set_midiPortOpenPortsIndex(
                                                  self.midi.open_port_with_name(newAction.currentText())))
         return midiPort
 
@@ -135,15 +134,15 @@ class ButtonWindow(QWidget):
         actionTypeList = inputs.get_actionType_list()
         actionType.setToolTip("Midi Message Type")
         actionType.addItems(actionTypeList)
-        actionType.setCurrentIndex(self.globalActionList[self.buttonID][actionID].actionType)
+        actionType.setCurrentIndex(self.actionList[self.buttonID][actionID].actionType)
         actionType.currentIndexChanged.connect(
-            lambda type, action=self.globalActionList[self.buttonID][actionID], controller=self.controllerID, button=self.buttonID, newAction=actionType:
+            lambda type, action=self.actionList[self.buttonID][actionID], controller=self.controllerID, button=self.buttonID, newAction=actionType:
             self.control_change(action, controller, button, newAction))
         return actionType
 
     def add_action(self, controllerID, buttonID):
         #needs to be overriden
-        globalAction = self.globalActionList[buttonID]
+        globalAction = self.actionList[buttonID]
         globalAction.append(inputs.ButtonAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
@@ -154,16 +153,16 @@ class ButtonWindow(QWidget):
     def control_change(self, action, controllerID, buttonID, newAction):
         action.set_midiAction(newAction.currentIndex())
         self.hide()
-        self.__init__(controllerID, buttonID, self.globalActionList)
+        self.__init__(controllerID, buttonID, self.actionList)
 
 class AxisWindow(ButtonWindow):
     def __init__(self, controllerID, axisID, globalActionList):
-        super().__init__(controllerID, axisID, globalActionList)
+        super().__init__(controllerID, axisID, actionList)
         self.setWindowTitle("Midi Joy: Axis: " + str(axisID+1))
 
     def add_action_ui(self, actionID):
         global globalButtonActionList
-        globalAction = self.globalActionList[self.buttonID][actionID]
+        globalAction = self.actionList[self.buttonID][actionID]
         actionList = QGridLayout()
         lastCol = 2
         muteBox = self.add_mute_box(actionID)
@@ -198,7 +197,7 @@ class AxisWindow(ButtonWindow):
         self.add_action_button_ui()
 
     def add_action(self, controllerID, buttonID):
-        globalAction = self.globalActionList[buttonID]
+        globalAction = self.actionList[self.buttonID][buttonID]
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
@@ -214,7 +213,7 @@ class AxisWindow(ButtonWindow):
         buttonBox.setToolTip("Connected Button Box")
         buttonBox.addItems(buttonList)  # list of 0 -> num of buttons: 0 will be open strum (-1)
         buttonBox.setCurrentIndex(-1)
-        buttonBox.setCurrentIndex(self.globalActionList[self.buttonID][actionID].get_connectedButtonIndex() + 1)
+        buttonBox.setCurrentIndex(self.aglobalActionList[self.buttonID][actionID].get_connectedButtonIndex() + 1)
         buttonBox.activated.connect(
             lambda state, controller=controllerID, axis=self.buttonID, actionID=actionID, note=buttonBox:
             self.globalActionList[self.buttonID][actionID].set_connectedButtonIndex(
@@ -223,12 +222,12 @@ class AxisWindow(ButtonWindow):
 
 class HatWindow(AxisWindow):
     def __init__(self, controllerID, axisID, globalActionList):
-        super().__init__(controllerID, axisID, globalActionList)
+        super().__init__(controllerID, axisID, actionList)
         self.setWindowTitle("Midi Joy: Hat: " + str(axisID+1))
 
     def add_action_ui(self, actionID):
         global globalButtonActionList
-        globalAction = self.globalActionList[self.buttonID][actionID]
+        globalAction = self.actionList[self.buttonID][actionID]
         actionList = QGridLayout()
         lastCol = 2
         muteBox = self.add_mute_box(actionID)
@@ -263,7 +262,7 @@ class HatWindow(AxisWindow):
         self.add_action_button_ui()
 
     def add_action(self, controllerID, buttonID):
-        globalAction = self.globalActionList[buttonID]
+        globalAction = self.actionList[self.buttonID][buttonID]
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
