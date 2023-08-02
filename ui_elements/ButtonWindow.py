@@ -6,14 +6,13 @@ from ui_elements import midi_joy_style as mjs
 from midi_and_controller import InputButton as inputs
 from midi_and_controller import midiManager
 
-#Only to open ports
-mm = midiManager.midiManager()
 class ButtonWindow(QWidget):
 
-    def __init__(self, controllerID, buttonID, globalActionList):
+    def __init__(self, controllerID, buttonID, globalActionList, midiManager):
         super().__init__()
         self.setWindowTitle("Midi Joy: button: " + str(buttonID+1))
         self.globalActionList = globalActionList
+        self.midi = midiManager
         self.layout = QVBoxLayout()
         self.controllerID = controllerID
         self.buttonID = buttonID
@@ -119,16 +118,16 @@ class ButtonWindow(QWidget):
 
     def add_midi_port_box(self, actionID):
         midiPort = QComboBox()
-        midiPortList = mm.get_output_list()
+        midiPortList = self.midi.get_output_list()
         midiPort.addItems(midiPortList)
         midiPort.setCurrentIndex(midiPortList.index(self.globalActionList[self.buttonID][actionID].midiPortName))
-        mm.open_port_with_name(self.globalActionList[self.buttonID][actionID].midiPortName)
+        self.midi.open_port_with_name(self.globalActionList[self.buttonID][actionID].midiPortName)
         midiPort.currentIndexChanged.connect(lambda port, newAction=midiPort:
                                              self.globalActionList[self.buttonID][actionID].set_midiPort(
                                                  newAction.currentIndex()))
         midiPort.currentIndexChanged.connect(lambda port, actionID=actionID, newAction=midiPort:
                                              self.globalActionList[self.buttonID][actionID].set_midiPortOpenPortsIndex(
-                                                 mm.open_port_with_name(newAction.currentText())))
+                                                 self.midi.open_port_with_name(newAction.currentText())))
         return midiPort
 
     def add_actionType_box(self, actionID):
@@ -148,7 +147,7 @@ class ButtonWindow(QWidget):
         globalAction.append(inputs.ButtonAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
-        portIndex = mm.open_port_with_name(globalAction[newActionID].midiPortName)
+        portIndex = self.midi.open_port_with_name(globalAction[newActionID].midiPortName)
         globalAction[newActionID].set_midiPortOpenPortsIndex(portIndex)
         self.add_action_ui(newActionID)
 
@@ -203,7 +202,7 @@ class AxisWindow(ButtonWindow):
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
-        portIndex = mm.open_port_with_name(globalAction[newActionID].midiPortName)
+        portIndex = self.midi.open_port_with_name(globalAction[newActionID].midiPortName)
         globalAction[newActionID].set_midiPortOpenPortsIndex(portIndex)
         self.add_action_ui(newActionID)
 
@@ -268,6 +267,6 @@ class HatWindow(AxisWindow):
         globalAction.append(inputs.AxisAction(inputIndex=buttonID))
         newActionID = len(globalAction) - 1
         print(globalAction[newActionID].get_midiAction().get_note())
-        portIndex = mm.open_port_with_name(globalAction[newActionID].midiPortName)
+        portIndex = self.midi.open_port_with_name(globalAction[newActionID].midiPortName)
         globalAction[newActionID].set_midiPortOpenPortsIndex(portIndex)
         self.add_action_ui(newActionID)

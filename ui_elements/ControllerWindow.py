@@ -119,13 +119,13 @@ class ControllerWindow(QWidget):
         self.setLayout(self.layout)
 
     def button_clicked(self, controllerID, buttonID):
-        self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, globalActionList=globalButtonActionList[self.controllerID]))
+        self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, globalActionList=globalButtonActionList[self.controllerID], midiManager=self.midi))
 
     def axis_clicked(self, controllerID, axisID):
-        self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, globalActionList=globalAxisActionList[self.controllerID]))
+        self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, globalActionList=globalAxisActionList[self.controllerID], midiManager=self.midi))
 
     def hat_clicked(self, controllerID, hatID):
-        self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, globalActionList=globalHatActionList[self.controllerID]))
+        self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, globalActionList=globalHatActionList[self.controllerID], midiManager=self.midi))
 
     def process_game_events(self, event):
         global start
