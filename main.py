@@ -15,6 +15,7 @@ end = time.time()
 gameManager = game.GameManager()
 acceptedInputTypes = gameManager.get_accepted_action_types()
 midi = midiManager.midiManager()
+running = True
 
 class PyGameEmitter_qthread(QObject):
     eventSignal = pyqtSignal(gameManager.get_typing_of_events())
@@ -23,7 +24,7 @@ class PyGameEmitter_qthread(QObject):
         super(PyGameEmitter_qthread, self).__init__()
 
     def py_game_emitter(self):
-        while(1):
+        while(running):
             events = gameManager.get_event()
             if (len(events) > 0):
                 self.eventSignal.emit(events)
@@ -37,7 +38,7 @@ class PyGameMainMenuAnimation_qthread(QObject):
     def py_game_controller(self):
         activeControllers = []
         lastFrameActiveControllers = []
-        while(1):
+        while(running):
             activeControllers = gameManager.get_active_controllers()
             newControllers = set(activeControllers).difference(lastFrameActiveControllers)
             for controller in newControllers:
@@ -114,6 +115,18 @@ class MainWindow(QMainWindow):
     def animate_button(self, button):
         self.controllerButtons[button].fullAnimatedClick.stop()
         self.controllerButtons[button].fullAnimatedClick.start()
+
+    def closeEvent(self, event):
+        #qwidget close window override
+        global running
+        running = False
+        self.emitterThread.quit()
+        self.controllerThread.quit()
+        self.isClosed = True
+        time.sleep(0.1)
+        gameManager.quit()
+        #TODO Close Mido ports
+        event.accept()
 
 app = QApplication([])
 app.setStyleSheet(qdarkstyle.load_stylesheet()) #https://github.com/ColinDuquesnoy/QDarkStyleSheet
