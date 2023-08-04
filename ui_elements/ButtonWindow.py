@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import QApplication, QVBoxLayout, QGridLayout, QWidget, QSizePolicy, \
-    QComboBox, QCheckBox, QSpinBox, QSpacerItem, QFrame, QMenuBar, QFileDialog
+from PyQt6.QtWidgets import QVBoxLayout, QGridLayout, QWidget, QSizePolicy, \
+    QComboBox, QCheckBox, QSpinBox, QSpacerItem, QFrame, QPushButton
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtCore import Qt
 from ui_elements import midi_joy_style as mjs
@@ -30,29 +30,31 @@ class ButtonWindow(QWidget):
         global globalButtonActionList
         action = self.actionList[self.buttonID][actionID]
         actionList = QGridLayout()
-        lastCol = 1
+        lastCol = 2
         muteBox = self.add_mute_box(actionID)
         ###
         if (action.actionType == 0):
             actionList.addWidget(self.add_note_box(actionID), actionID, 1)
         ###
         if (action.actionType == 1):
-            lastCol = 2
+            lastCol = 3
             actionList.addWidget(self.add_control_type_box(actionID), actionID, 1)
-            actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol)
+            actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol - 1)
         ###
         midiPort = self.add_midi_port_box(actionID)
         ###
         actionType = self.add_actionType_box(actionID)
         ###
+        deleteActionBox = self.add_delete_action_button(actionID)
         lineSpacer = QFrame()
         lineSpacer.setFrameShape(QFrame.Shape.HLine)
         lineSpacer.setFrameShadow(QFrame.Shadow.Sunken)
         firstSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         secondSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        actionList.addWidget(muteBox, actionID + 1, 0)
-        actionList.addWidget(midiPort, actionID + 1, lastCol)
         actionList.addWidget(actionType, actionID, 0)
+        actionList.addWidget(deleteActionBox, actionID, lastCol)
+        actionList.addWidget(midiPort, actionID + 1, 0)
+        actionList.addWidget(muteBox, actionID + 1, lastCol)
         self.layout.addLayout(actionList)
         self.layout.addItem(firstSpacer)
         self.layout.addWidget(lineSpacer)
@@ -78,6 +80,15 @@ class ButtonWindow(QWidget):
             lambda mute, controller=self.controllerID, button=self.buttonID, actionID=actionID, muteState=muteBox:
             self.actionList[self.buttonID][actionID].set_mute(muteState.isChecked()))
         return muteBox
+
+    def add_delete_action_button(self, actionID):
+        deletebox = QPushButton("&Delete")
+        # deletebox.setText("Mute")
+        deletebox.setToolTip("Delete Action")
+        deletebox.clicked.connect(
+            lambda delete, controller=self.controllerID, button=self.buttonID, actionID=actionID:
+            self.delete_action(controller, button, actionID))
+        return deletebox
 
     def add_note_box(self, actionID):
         noteBox = QComboBox()
@@ -150,6 +161,11 @@ class ButtonWindow(QWidget):
         globalAction[newActionID].set_midiPortOpenPortsIndex(portIndex)
         self.add_action_ui(newActionID)
 
+    def delete_action(self, controllerID, buttonID, actionID):
+        self.actionList[buttonID].pop(actionID)
+        self.hide()
+        self.__init__(controllerID, buttonID, self.actionList, self.midi)
+
     def control_change(self, action, controllerID, buttonID, newAction):
         action.set_midiAction(newAction.currentIndex())
         self.hide()
@@ -164,31 +180,33 @@ class AxisWindow(ButtonWindow):
         global globalButtonActionList
         globalAction = self.actionList[self.buttonID][actionID]
         actionList = QGridLayout()
-        lastCol = 2
+        lastCol = 3
         muteBox = self.add_mute_box(actionID)
         ###
         if (globalAction.actionType == 0):
             actionList.addWidget(self.add_note_box(actionID), actionID, 1)
-            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol)
+            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol - 1)
         ###
         if (globalAction.actionType == 1):
-            lastCol = 3
+            lastCol = 4
             actionList.addWidget(self.add_control_type_box(actionID), actionID, 1)
-            actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol - 1)
-            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol)
+            actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol - 2)
+            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol - 1)
         ###
         midiPort = self.add_midi_port_box(actionID)
         ###
         actionType = self.add_actionType_box(actionID)
         ###
+        deleteActionBox = self.add_delete_action_button(actionID)
         lineSpacer = QFrame()
         lineSpacer.setFrameShape(QFrame.Shape.HLine)
         lineSpacer.setFrameShadow(QFrame.Shadow.Sunken)
         firstSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         secondSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        actionList.addWidget(muteBox, actionID + 1, 0)
-        actionList.addWidget(midiPort, actionID + 1, lastCol)
         actionList.addWidget(actionType, actionID, 0)
+        actionList.addWidget(deleteActionBox, actionID, lastCol)
+        actionList.addWidget(midiPort, actionID + 1, 0)
+        actionList.addWidget(muteBox, actionID + 1, lastCol)
         self.layout.addLayout(actionList)
         self.layout.addItem(firstSpacer)
         self.layout.addWidget(lineSpacer)
@@ -224,48 +242,3 @@ class HatWindow(AxisWindow):
     def __init__(self, controllerID, axisID, actionList, midiManager):
         super().__init__(controllerID, axisID, actionList, midiManager)
         self.setWindowTitle("Midi Joy: Hat: " + str(axisID+1))
-
-    def add_action_ui(self, actionID):
-        global globalButtonActionList
-        globalAction = self.actionList[self.buttonID][actionID]
-        actionList = QGridLayout()
-        lastCol = 2
-        muteBox = self.add_mute_box(actionID)
-        ###
-        if (globalAction.actionType == 0):
-            actionList.addWidget(self.add_note_box(actionID), actionID, 1)
-            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol)
-        ###
-        if (globalAction.actionType == 1):
-            lastCol = 3
-            actionList.addWidget(self.add_control_type_box(actionID), actionID, 1)
-            actionList.addWidget(self.add_control_value_box(actionID), actionID, lastCol - 1)
-            actionList.addWidget(self.add_connected_button_box(actionID), actionID, lastCol)
-        ###
-        midiPort = self.add_midi_port_box(actionID)
-        ###
-        actionType = self.add_actionType_box(actionID)
-        ###
-        lineSpacer = QFrame()
-        lineSpacer.setFrameShape(QFrame.Shape.HLine)
-        lineSpacer.setFrameShadow(QFrame.Shadow.Sunken)
-        firstSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        secondSpacer = QSpacerItem(20, 7, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        actionList.addWidget(muteBox, actionID + 1, 0)
-        actionList.addWidget(midiPort, actionID + 1, lastCol)
-        actionList.addWidget(actionType, actionID, 0)
-        self.layout.addLayout(actionList)
-        self.layout.addItem(firstSpacer)
-        self.layout.addWidget(lineSpacer)
-        self.layout.addItem(secondSpacer)
-        self.layout.removeWidget(self.add_actionButton)
-        self.add_action_button_ui()
-
-    def add_action(self, controllerID, buttonID):
-        globalAction = self.actionList[buttonID]
-        globalAction.append(inputs.AxisAction(inputIndex=buttonID))
-        newActionID = len(globalAction) - 1
-        print(globalAction[newActionID].get_midiAction().get_note())
-        portIndex = self.midi.open_port_with_name(globalAction[newActionID].midiPortName)
-        globalAction[newActionID].set_midiPortOpenPortsIndex(portIndex)
-        self.add_action_ui(newActionID)
