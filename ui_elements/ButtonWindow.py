@@ -10,7 +10,7 @@ class ButtonWindow(QWidget):
     def __init__(self, controllerID, buttonID, actionList, midiManager):
         super().__init__()
         self.setWindowTitle("Midi Joy: button: " + str(buttonID+1))
-        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.isClosed = False
         self.actionList = actionList
         self.midi = midiManager
@@ -170,7 +170,7 @@ class ButtonWindow(QWidget):
     def control_change(self, action, controllerID, buttonID, newAction):
         action.set_midiAction(newAction.currentIndex())
         self.hide()
-        self.__init__(controllerID, buttonID, self.actionList)
+        self.__init__(controllerID, buttonID, self.actionList, self.midi)
 
     def closeEvent(self, event):
         #qwidget close window override
