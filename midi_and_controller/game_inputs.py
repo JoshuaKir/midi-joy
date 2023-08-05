@@ -87,5 +87,8 @@ class GameManager:
 
     def get_accepted_action_types(self):
         return [game.JOYBUTTONUP, game.JOYBUTTONDOWN, game.JOYAXISMOTION, game.JOYHATMOTION]
+
+    def quit(self):
+        game.quit()
 #kinda funny
 #get_power_level

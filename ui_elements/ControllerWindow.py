@@ -47,7 +47,7 @@ class ControllerWindow(QWidget):
         self.lastFrameAxisAnimationArray = []
         self.lastFrameHatAnimationArray = []
         self.layout = QVBoxLayout()
-        self.setWindowTitle("Midi Joy: "+ self.controller)
+        self.setWindowTitle("Midi Joy: " + self.controller)
         self.controllerID = controllerID
         self.actionWindows = []
         self.controllerAxes = []
@@ -123,13 +123,37 @@ class ControllerWindow(QWidget):
         self.setLayout(self.layout)
 
     def button_clicked(self, controllerID, buttonID):
-        self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, actionList=self.buttonActionList, midiManager=self.midi))
+        windowAlreadyOpen = False
+        for i, window in enumerate(self.actionWindows):
+            if window.buttonID == buttonID and not window.isClosed:
+                windowAlreadyOpen = True
+            if window.isClosed:
+                self.actionWindows.pop(i)
+
+        if not windowAlreadyOpen:
+            self.actionWindows.append(ButtonWindow.ButtonWindow(controllerID=controllerID, buttonID=buttonID, actionList=self.buttonActionList, midiManager=self.midi))
 
     def axis_clicked(self, controllerID, axisID):
-        self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, actionList=self.axisActionList, midiManager=self.midi))
+        windowAlreadyOpen = False
+        for i, window in enumerate(self.actionWindows):
+            if window.buttonID == axisID and not window.isClosed:
+                windowAlreadyOpen = True
+            if window.isClosed:
+                self.actionWindows.pop(i)
+
+        if not windowAlreadyOpen:
+            self.actionWindows.append(ButtonWindow.AxisWindow(controllerID=controllerID, axisID=axisID, actionList=self.axisActionList, midiManager=self.midi))
 
     def hat_clicked(self, controllerID, hatID):
-        self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, actionList=self.hatActionList, midiManager=self.midi))
+        windowAlreadyOpen = False
+        for i, window in enumerate(self.actionWindows):
+            if window.buttonID == hatID and not window.isClosed:
+                windowAlreadyOpen = True
+            if window.isClosed:
+                self.actionWindows.pop(i)
+
+        if not windowAlreadyOpen:
+            self.actionWindows.append(ButtonWindow.HatWindow(controllerID=controllerID, axisID=hatID, actionList=self.hatActionList, midiManager=self.midi))
 
     def process_game_events(self, event):
         global start
@@ -315,3 +339,10 @@ class ControllerWindow(QWidget):
         for action in self.hatActionList[hatID]:
             if (not action.isMuted):
                 self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOff)
+
+    def closeEvent(self, event):
+        #qwidget close window override
+        for window in self.actionWindows:
+            window.close()
+        self.isClosed = True
+        event.accept()

@@ -1,6 +1,5 @@
 from PyQt6.QtWidgets import QVBoxLayout, QGridLayout, QWidget, QSizePolicy, \
     QComboBox, QCheckBox, QSpinBox, QSpacerItem, QFrame, QPushButton
-from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtCore import Qt
 from ui_elements import midi_joy_style as mjs
 from midi_and_controller import InputButton as inputs
@@ -11,6 +10,8 @@ class ButtonWindow(QWidget):
     def __init__(self, controllerID, buttonID, actionList, midiManager):
         super().__init__()
         self.setWindowTitle("Midi Joy: button: " + str(buttonID+1))
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.isClosed = False
         self.actionList = actionList
         self.midi = midiManager
         self.layout = QVBoxLayout()
@@ -170,6 +171,11 @@ class ButtonWindow(QWidget):
         action.set_midiAction(newAction.currentIndex())
         self.hide()
         self.__init__(controllerID, buttonID, self.actionList)
+
+    def closeEvent(self, event):
+        #qwidget close window override
+        self.isClosed = True
+        event.accept()
 
 class AxisWindow(ButtonWindow):
     def __init__(self, controllerID, axisID, actionList, midiManager):
