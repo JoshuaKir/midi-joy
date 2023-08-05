@@ -120,6 +120,7 @@ class ControllerWindow(QWidget):
         self.layout.addLayout(self.axesAndHats)
         screenSize = QApplication.primaryScreen().size()
         self.setMinimumSize(screenSize.width()/1.75, screenSize.height()/1.75)
+        self.layout.setSpacing(8)
         self.setLayout(self.layout)
 
     def button_clicked(self, controllerID, buttonID):
