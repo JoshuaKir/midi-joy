@@ -170,7 +170,7 @@ class ButtonWindow(QWidget):
     def control_change(self, action, controllerID, buttonID, newAction):
         action.set_midiAction(newAction.currentIndex())
         self.hide()
-        self.__init__(controllerID, buttonID, self.actionList)
+        self.__init__(controllerID, buttonID, self.actionList, self.midi)
 
     def closeEvent(self, event):
         #qwidget close window override
