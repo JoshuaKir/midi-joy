@@ -171,15 +171,20 @@ class ControllerWindow(QWidget):
                 newAxis = set([event.axis]).difference(self.lastFrameAxisAnimationArray)  # sets are faster
                 if (len(newAxis) > 0 and abs(event.value) > 0.2):
                     self.controller_axis_activated(event.axis, event.value)
-                    self.animate_axis_on(event.axis)
+                    self.animate_axis_on(event.axis, abs(event.value))
                     self.axisAnimationArray.append(event.axis)
 
                 else:
                     for i, axis in enumerate(self.axisAnimationArray):
-                        if (abs(event.value) < 0.2 and event.axis == axis):
-                            self.controller_axis_deactivated(event.axis, event.value)
-                            self.animate_axis_off(event.axis)
-                            self.axisAnimationArray.pop(i)
+                        if (event.axis == axis):
+
+                            if (abs(event.value) < 0.2):
+                                self.controller_axis_deactivated(event.axis, event.value)
+                                self.animate_axis_off(event.axis)
+                                self.axisAnimationArray.pop(i)
+                            # change alpha
+                            else:
+                                self.animate_axis_on(axis, event.value)
 
                 self.lastFrameAxisAnimationArray = self.axisAnimationArray
 
@@ -203,9 +208,8 @@ class ControllerWindow(QWidget):
         self.controllerButtons[button].fullAnimatedClick.stop()
         self.controllerButtons[button].fullAnimatedClick.start()
 
-    def animate_axis_on(self, axis):
-        self.controllerAxes[axis].secondAnimation.stop()
-        self.controllerAxes[axis].firstAnimation.start()
+    def animate_axis_on(self, axis, alpha):
+        self.controllerAxes[axis].animate_axis(alpha)
 
     def animate_axis_off(self, axis):
         self.controllerAxes[axis].firstAnimation.stop()

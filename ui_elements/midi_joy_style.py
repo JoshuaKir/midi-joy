@@ -17,19 +17,28 @@ class AnimatedButton(QPushButton):
         self.set_animation_color('#bb14e0')
 
     def set_animation_color(self, colorHex):
-        effect = QGraphicsColorizeEffect(self)
-        effect.setColor(QtGui.QColor(0, 0, 0))
-        self.setGraphicsEffect(effect)
+        self.effect = QGraphicsColorizeEffect(self)
+        self.effect.setColor(QtGui.QColor(0, 0, 0))
+        self.setGraphicsEffect(self.effect)
+        self.color = QtGui.QColor(colorHex)
         
-        self.firstAnimation = QtCore.QPropertyAnimation(effect, b"color")
+        self.firstAnimation = QtCore.QPropertyAnimation(self.effect, b"color")
         self.firstAnimation.setStartValue(QtGui.QColor(0, 0, 0))
-        self.firstAnimation.setEndValue(QtGui.QColor(colorHex))
+        self.firstAnimation.setEndValue(self.color)
         self.firstAnimation.setDuration(50)
 
-        self.secondAnimation = QtCore.QPropertyAnimation(effect, b"color")
+        self.secondAnimation = QtCore.QPropertyAnimation(self.effect, b"color")
         self.secondAnimation.setEndValue(QtGui.QColor(0, 0, 0))
         self.secondAnimation.setDuration(2000)
 
         self.fullAnimatedClick = QSequentialAnimationGroup()
         self.fullAnimatedClick.addAnimation(self.firstAnimation)
         self.fullAnimatedClick.addAnimation(self.secondAnimation)
+
+        self.changeAlpha = QtCore.QPropertyAnimation(self.effect, b"color")
+
+    def animate_axis(self, alpha):
+        #self.changeAlpha.setStartValue(self.color)
+        self.color.setAlphaF(min(abs(alpha), 1))
+        self.changeAlpha.setEndValue(self.color)
+        self.changeAlpha.start()
