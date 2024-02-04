@@ -169,7 +169,7 @@ class ControllerWindow(QWidget):
 
             elif (event.type == axisMotion):
                 newAxis = set([event.axis]).difference(self.lastFrameAxisAnimationArray)  # sets are faster
-                if (len(newAxis) > 0 and abs(event.value) > 0.2):
+                if (len(newAxis) > 0 and abs(event.value) > 0.25): # doesn't account for change in axis value for control change. Need fix
                     self.controller_axis_activated(event.axis, event.value)
                     self.animate_axis_on(event.axis, abs(event.value))
                     self.axisAnimationArray.append(event.axis)
@@ -177,8 +177,7 @@ class ControllerWindow(QWidget):
                 else:
                     for i, axis in enumerate(self.axisAnimationArray):
                         if (event.axis == axis):
-
-                            if (abs(event.value) < 0.2):
+                            if (abs(event.value) < 0.25):
                                 self.controller_axis_deactivated(event.axis, event.value)
                                 self.animate_axis_off(event.axis)
                                 self.axisAnimationArray.pop(i)
@@ -306,16 +305,17 @@ class ControllerWindow(QWidget):
                 self.midiedNoteBool = True
 
         for action in self.axisActionList[axisID]:
-            if (not action.isMuted and action.actionType == 0):
-                if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
-                    self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
-                    self.midiedNoteBool = True
-                if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):
-                    self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+            if (not action.isMuted): 
+                if (action.actionType == 0):
+                    if (action.get_connectedButtonIndex() in gameManager.get_active_buttons(self.controllerID)):
+                        self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+                        self.midiedNoteBool = True
+                    if (action.get_connectedButtonIndex() == -1 and not self.midiedNoteBool):
+                        self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
 
-            elif (action.actionType == 1):
-                action.get_midiAction().set_value(int(abs(value) * 127))
-                self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
+                elif (action.actionType == 1):
+                    action.get_midiAction().set_value(int(abs(value) * 127))
+                    self.midi.send_midi_message(action.midiPortOpenPortsIndex, action.midiAction.midoMessageOn)
 
     def controller_axis_deactivated(self, axisID, value):
         for action in self.axisActionList[axisID]:
